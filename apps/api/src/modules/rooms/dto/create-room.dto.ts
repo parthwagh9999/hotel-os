@@ -4,6 +4,7 @@ import {
   IsNumber,
   IsEnum,
   IsBoolean,
+  IsArray,
   MinLength,
   MaxLength,
 } from 'class-validator';
@@ -25,17 +26,54 @@ export class CreateRoomDto {
   @IsNumber()
   floor?: number;
 
-  @ApiPropertyOptional({ example: 'AVAILABLE', enum: ['AVAILABLE', 'OCCUPIED', 'MAINTENANCE', 'CLEANING', 'OUT_OF_ORDER'] })
+  @ApiPropertyOptional({ example: 'AVAILABLE' })
   @IsOptional()
-  @IsEnum(['AVAILABLE', 'OCCUPIED', 'MAINTENANCE', 'CLEANING', 'OUT_OF_ORDER'])
+  @IsString()
   status?: string;
+
+  @ApiPropertyOptional({ example: 'Corner room with panoramic sea views' })
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @ApiPropertyOptional({ example: ['Wi-Fi', 'Smart TV', 'AC'] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  amenities?: string[];
+
+  @ApiPropertyOptional({ example: ['https://example.com/room101.jpg'] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  images?: string[];
 
   @ApiPropertyOptional({ example: true })
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
 
-  @ApiPropertyOptional({ example: 'Corner room with balcony' })
+  @ApiPropertyOptional({ example: false })
+  @IsOptional()
+  @IsBoolean()
+  isSmokingAllowed?: boolean;
+
+  @ApiPropertyOptional({ example: true })
+  @IsOptional()
+  @IsBoolean()
+  hasBalcony?: boolean;
+
+  @ApiPropertyOptional({ example: true })
+  @IsOptional()
+  @IsBoolean()
+  hasSeaView?: boolean;
+
+  @ApiPropertyOptional({ example: false })
+  @IsOptional()
+  @IsBoolean()
+  hasMountainView?: boolean;
+
+  @ApiPropertyOptional({ example: 'Corner room' })
   @IsOptional()
   @IsString()
   @MaxLength(500)

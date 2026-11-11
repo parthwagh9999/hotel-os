@@ -1,12 +1,15 @@
 {
   "name": "hotel-os",
   "private": true,
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
     "lint": "turbo run lint",
-    "test": "turbo run test",
+    "test": "tsx scripts/test-e2e.ts",
     "type-check": "turbo run type-check",
     "db:generate": "npm run generate -w @hotel-os/database",
     "db:push": "npm run push -w @hotel-os/database",
@@ -14,9 +17,12 @@
     "clean": "turbo run clean"
   },
   "devDependencies": {
+    "tsx": "^4.23.15",
     "turbo": "^2.3.0",
     "typescript": "^5.7.0"
   },
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "packageManager": "npm@11.17.0"
 }

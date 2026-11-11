@@ -788,7 +788,7 @@ model Department {
 /// Staff employment profile
 model StaffProfile {
   id               String   @id @default(uuid())
-  userId           String
+  userId           String   @unique
   hotelId          String
   departmentId     String?
   employeeId       String   @unique

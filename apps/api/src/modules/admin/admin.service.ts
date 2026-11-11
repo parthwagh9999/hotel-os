@@ -63,7 +63,7 @@ export class AdminService {
         skip,
         take: limit,
         include: {
-          subscriptions: true,
+          subscription: true,
           _count: {
             select: {
               rooms: true,

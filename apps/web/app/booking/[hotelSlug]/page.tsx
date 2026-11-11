@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../../src/lib/api';
 
-export default function BookingCheckoutPage() {
+function BookingCheckoutContent() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -333,4 +333,13 @@ export default function BookingCheckoutPage() {
     </div>
   );
 }
+
+export default function BookingCheckoutPage() {
+  return (
+    <React.Suspense fallback={<div className="p-12 text-center text-slate-500 text-sm">Loading checkout...</div>}>
+      <BookingCheckoutContent />
+    </React.Suspense>
+  );
+}
+
 

@@ -33,7 +33,7 @@ interface HotelItem {
   isFeatured: boolean;
 }
 
-export default function HotelsListingPage() {
+function HotelsListingContent() {
   const searchParams = useSearchParams();
   const initialCity = searchParams.get('city') || '';
 
@@ -376,4 +376,13 @@ export default function HotelsListingPage() {
     </div>
   );
 }
+
+export default function HotelsListingPage() {
+  return (
+    <React.Suspense fallback={<div className="p-12 text-center text-slate-500 text-sm">Loading properties...</div>}>
+      <HotelsListingContent />
+    </React.Suspense>
+  );
+}
+
 

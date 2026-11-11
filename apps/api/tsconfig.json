@@ -7,11 +7,15 @@
     "baseUrl": "./",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
+    "strictPropertyInitialization": false,
     "declaration": false,
     "declarationMap": false,
     "incremental": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@hotel-os/shared": ["../../packages/shared/src/index.ts"],
+      "@hotel-os/database": ["../../packages/database/src/index.ts"],
+      "@hotel-os/ui": ["../../packages/ui/src/index.ts"]
     }
   },
   "include": ["src/**/*.ts"],

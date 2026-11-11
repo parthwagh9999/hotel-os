@@ -225,7 +225,7 @@ export class HotelsService {
       where: { id },
       include: {
         roomCategories: true,
-        subscriptions: true,
+        subscription: true,
       },
     });
 
@@ -242,7 +242,7 @@ export class HotelsService {
       include: {
         hotel: {
           include: {
-            subscriptions: true,
+            subscription: true,
             _count: {
               select: {
                 rooms: true,

@@ -3,6 +3,7 @@ import {
   IsOptional,
   IsNumber,
   IsArray,
+  IsBoolean,
   Min,
   Max,
   MinLength,
@@ -16,6 +17,11 @@ export class CreateCategoryDto {
   @MinLength(2)
   @MaxLength(100)
   name: string;
+
+  @ApiPropertyOptional({ example: 'deluxe-suite' })
+  @IsOptional()
+  @IsString()
+  slug?: string;
 
   @ApiPropertyOptional({ example: 'Spacious suite with city view and premium amenities' })
   @IsOptional()
@@ -35,6 +41,12 @@ export class CreateCategoryDto {
   @Max(10)
   maxOccupancy?: number;
 
+  @ApiPropertyOptional({ example: 500 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  extraPersonCharge?: number;
+
   @ApiPropertyOptional({ example: ['WiFi', 'Mini Bar', 'Room Service', 'AC'] })
   @IsOptional()
   @IsArray()
@@ -47,14 +59,28 @@ export class CreateCategoryDto {
   @IsString({ each: true })
   images?: string[];
 
-  @ApiPropertyOptional({ example: 45.5 })
+  @ApiPropertyOptional({ example: '45.5 sq.m' })
   @IsOptional()
-  @IsNumber()
-  @Min(0)
-  sizeSqFt?: number;
+  @IsString()
+  roomSize?: string;
 
-  @ApiPropertyOptional({ example: 'KING' })
+  @ApiPropertyOptional({ example: 'King Bed' })
   @IsOptional()
   @IsString()
   bedType?: string;
+
+  @ApiPropertyOptional({ example: 1 })
+  @IsOptional()
+  @IsNumber()
+  bedCount?: number;
+
+  @ApiPropertyOptional({ example: true })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+
+  @ApiPropertyOptional({ example: 0 })
+  @IsOptional()
+  @IsNumber()
+  sortOrder?: number;
 }

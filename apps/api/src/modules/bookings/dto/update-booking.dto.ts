@@ -62,3 +62,6 @@ export class LookupBookingDto {
   @IsString()
   email: string;
 }
+
+export class UpdateBookingDto extends UpdateBookingStatusDto {}
+

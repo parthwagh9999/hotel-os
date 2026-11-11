@@ -95,7 +95,7 @@ export class RoomsService {
         hotelId,
         categoryId: dto.categoryId,
         roomNumber: dto.roomNumber,
-        floor: dto.floor,
+        floor: dto.floor || 1,
         status: (dto.status as any) || 'AVAILABLE',
         description: dto.description,
         amenities: dto.amenities || [],

@@ -1,0 +1,71 @@
+name: Hotel OS CI / CD Pipeline
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  lint-and-typecheck:
+    name: Lint & Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: Setup Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install Monorepo Dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npm run db:generate
+
+      - name: Monorepo Typecheck
+        run: npm run type-check
+
+  ai-service-tests:
+    name: AI Prediction Engine Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install AI Dependencies
+        run: |
+          cd services/ai-engine
+          pip install -r requirements.txt
+
+      - name: Run AI Forecast Verification
+        run: |
+          cd services/ai-engine
+          python -m py_compile main.py
+          python -c "import main; res = main.predict_occupancy(main.ForecastRequest(hotel_id='ci-test', horizon_days=14)); assert len(res.forecast) == 14"
+
+  docker-build-verification:
+    name: Container Build Verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Verify Docker Compose config
+        run: docker compose -f docker/docker-compose.yml config

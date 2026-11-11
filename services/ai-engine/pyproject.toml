@@ -1,0 +1,36 @@
+[project]
+name = "hotel-os-ai-engine"
+version = "0.1.0"
+description = "AI/ML engine for Hotel OS — dynamic pricing, demand forecasting, and guest insights"
+readme = "README.md"
+requires-python = ">=3.13"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Hotel OS Team" }]
+
+dependencies = [
+  "fastapi>=0.115.0,<1.0.0",
+  "uvicorn[standard]>=0.34.0,<1.0.0",
+  "pandas>=2.2.0,<3.0.0",
+  "numpy>=2.1.0,<3.0.0",
+  "scikit-learn>=1.6.0,<2.0.0",
+  "sqlalchemy>=2.0.0,<3.0.0",
+  "psycopg2-binary>=2.9.0,<3.0.0",
+  "pydantic>=2.10.0,<3.0.0",
+  "pydantic-settings>=2.7.0,<3.0.0",
+  "redis>=5.2.0,<6.0.0",
+  "httpx>=0.28.0,<1.0.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0.0", "ruff>=0.8.0", "mypy>=1.13.0"]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true

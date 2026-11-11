@@ -42,12 +42,12 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/login" className="hover:text-amber-600">
-                  Manage Reservations
+                <Link href="/check-in" className="hover:text-amber-600">
+                  Contactless Self Check-In
                 </Link>
               </li>
               <li>
-                <Link href="/login" className="hover:text-amber-600">
+                <Link href="/loyalty" className="hover:text-amber-600">
                   Loyalty Points & Rewards
                 </Link>
               </li>

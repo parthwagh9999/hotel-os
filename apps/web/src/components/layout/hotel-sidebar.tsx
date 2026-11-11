@@ -13,7 +13,10 @@ import {
   BrainCircuit,
   Settings,
   Building,
-  ChevronRight,
+  UtensilsCrossed,
+  MessageSquare,
+  Flame,
+  Bot,
 } from 'lucide-react';
 
 export function HotelSidebar() {
@@ -24,8 +27,12 @@ export function HotelSidebar() {
     { href: '/hotel/front-desk', label: 'Front Desk PMS', icon: UserCheck },
     { href: '/hotel/rooms', label: 'Rooms & Inventory', icon: BedDouble },
     { href: '/hotel/housekeeping', label: 'Housekeeping Operations', icon: Sparkles },
+    { href: '/hotel/dining', label: 'Dining & Room Service POS', icon: UtensilsCrossed, badge: 'POS' },
     { href: '/hotel/finance', label: 'Finance & GST Invoicing', icon: Receipt },
+    { href: '/hotel/heatmap', label: 'Smart Occupancy Heatmap', icon: Flame, badge: 'PLAN' },
     { href: '/hotel/ai-insights', label: 'AI Revenue & Forecasts', icon: BrainCircuit, badge: 'AI' },
+    { href: '/hotel/assistant', label: 'AI Hotel Copilot', icon: Bot, badge: 'NEW' },
+    { href: '/hotel/whatsapp-alerts', label: 'WhatsApp Dispatcher', icon: MessageSquare, badge: 'LIVE' },
     { href: '/hotel/onboarding', label: 'Property Onboarding', icon: Building },
   ];
 
@@ -51,19 +58,19 @@ export function HotelSidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
+              className={`flex items-center justify-between rounded-lg px-3 py-2 text-xs font-medium transition-all ${
                 isActive
                   ? 'bg-amber-600 text-white shadow-sm'
                   : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200'
               }`}
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5">
                 <Icon className={`h-4 w-4 ${isActive ? 'text-white' : 'text-slate-500'}`} />
                 <span>{item.label}</span>
               </div>
               {item.badge && (
                 <span
-                  className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                  className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
                     isActive
                       ? 'bg-amber-700 text-white'
                       : 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300'
@@ -79,4 +86,3 @@ export function HotelSidebar() {
     </aside>
   );
 }
-

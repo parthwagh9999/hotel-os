@@ -189,6 +189,33 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ─── Fast Actions Banner: Self Check-In & Rewards ─────────────────── */}
+      <section className="bg-slate-800 border-b border-slate-700/60 py-4 px-4 text-white">
+        <div className="mx-auto max-w-7xl flex flex-wrap items-center justify-between gap-4 text-xs">
+          <div className="flex items-center gap-6">
+            <Link
+              href="/check-in"
+              className="flex items-center gap-2 hover:text-amber-400 font-bold transition-colors"
+            >
+              <span className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400">⚡</span>
+              <span>Express Contactless Self Check-In Portal</span>
+            </Link>
+            <Link
+              href="/loyalty"
+              className="flex items-center gap-2 hover:text-amber-400 font-bold transition-colors"
+            >
+              <span className="p-1.5 rounded-lg bg-purple-500/20 text-purple-400">🎁</span>
+              <span>Earn 15% Rewards on Direct Bookings</span>
+            </Link>
+          </div>
+          <div className="flex items-center gap-4 text-slate-400">
+            <span>🇮🇳 Indian DPDP Act 2025 Compliant</span>
+            <span>•</span>
+            <span>🧾 Automated GST Slabs (0%, 12%, 18%)</span>
+          </div>
+        </div>
+      </section>
+
       {/* ─── Featured Hotels Section ───────────────────────────────────────── */}
       <section className="py-20 bg-slate-50 dark:bg-slate-900/50">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

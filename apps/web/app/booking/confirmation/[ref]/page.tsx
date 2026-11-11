@@ -103,6 +103,12 @@ export default function BookingConfirmationPage() {
             <p className="text-slate-600 mt-0.5">Deluxe Heritage Room • King Bed • Free Wi-Fi • High-Floor Request Noted</p>
           </div>
           <div className="flex items-center gap-2">
+            <Link
+              href={`/check-in/${ref}`}
+              className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700"
+            >
+              <CheckCircle2 className="h-3.5 w-3.5" /> Self Check-In Now
+            </Link>
             <button
               onClick={() => window.print()}
               className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50"

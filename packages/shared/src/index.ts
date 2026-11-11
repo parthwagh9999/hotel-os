@@ -2,6 +2,9 @@
 // Centralized enterprise types, constants, enums, validation schemas, and helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
+export * from './i18n';
+
+
 // ─── 1. USER & AUTH ENUMS & TYPES ───────────────────────────────────────────
 
 export enum UserRole {

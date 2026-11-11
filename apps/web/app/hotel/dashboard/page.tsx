@@ -161,12 +161,12 @@ export default function HotelDashboardPage() {
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="rounded-xl bg-white p-4 border border-amber-100 shadow-sm flex items-start gap-3">
             <div className="h-2.5 w-2.5 rounded-full bg-red-500 shrink-0 mt-1" />
             <div>
-              <span className="text-xs font-bold text-slate-900">3 Rooms Need Checkout Sanitization</span>
-              <p className="text-[11px] text-slate-500 mt-0.5">Rooms 102, 204, 305 pending inspection</p>
+              <span className="text-xs font-bold text-slate-900">3 Rooms Need Sanitization</span>
+              <p className="text-[11px] text-slate-500 mt-0.5">Rooms 102, 204, 305 pending</p>
               <Link href="/hotel/housekeeping" className="text-[11px] font-bold text-amber-600 hover:underline mt-2 inline-block">
                 Assign Housekeeping →
               </Link>
@@ -176,7 +176,7 @@ export default function HotelDashboardPage() {
           <div className="rounded-xl bg-white p-4 border border-amber-100 shadow-sm flex items-start gap-3">
             <div className="h-2.5 w-2.5 rounded-full bg-amber-500 shrink-0 mt-1" />
             <div>
-              <span className="text-xs font-bold text-slate-900">Weekend Surge Pricing Opportunity</span>
+              <span className="text-xs font-bold text-slate-900">Weekend Surge Pricing</span>
               <p className="text-[11px] text-slate-500 mt-0.5">AI suggests +15% on Deluxe Rooms</p>
               <Link href="/hotel/ai-insights" className="text-[11px] font-bold text-amber-600 hover:underline mt-2 inline-block">
                 Review AI Pricing →
@@ -188,9 +188,20 @@ export default function HotelDashboardPage() {
             <div className="h-2.5 w-2.5 rounded-full bg-blue-500 shrink-0 mt-1" />
             <div>
               <span className="text-xs font-bold text-slate-900">VIP Arrival at 15:30 hrs</span>
-              <p className="text-[11px] text-slate-500 mt-0.5">Presidential Suite (Mrs. Kavita Iyer)</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">Presidential Suite (Mrs. Iyer)</p>
               <Link href="/hotel/front-desk" className="text-[11px] font-bold text-amber-600 hover:underline mt-2 inline-block">
                 Open Front Desk Folio →
+              </Link>
+            </div>
+          </div>
+
+          <div className="rounded-xl bg-white p-4 border border-amber-100 shadow-sm flex items-start gap-3">
+            <div className="h-2.5 w-2.5 rounded-full bg-purple-500 shrink-0 mt-1" />
+            <div>
+              <span className="text-xs font-bold text-slate-900">2 In-Room Dining KOTs</span>
+              <p className="text-[11px] text-slate-500 mt-0.5">Room #204 & #401 cooking</p>
+              <Link href="/hotel/dining" className="text-[11px] font-bold text-amber-600 hover:underline mt-2 inline-block">
+                Kitchen Dispatch →
               </Link>
             </div>
           </div>

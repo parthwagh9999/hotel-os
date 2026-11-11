@@ -69,3 +69,4 @@ jobs:
 
       - name: Verify Docker Compose config
         run: docker compose -f docker/docker-compose.yml config
+

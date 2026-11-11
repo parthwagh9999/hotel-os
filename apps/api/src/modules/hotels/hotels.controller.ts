@@ -67,3 +67,4 @@ export class HotelsController {
     return this.hotelsService.getDashboardStats(hotelId);
   }
 }
+

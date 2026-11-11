@@ -14,3 +14,4 @@ A clear and concise description of what you want to happen.
 
 ## Hospitality Context
 Explain how this feature benefits small independent hotels, luxury resorts, or booking guests.
+

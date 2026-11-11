@@ -64,3 +64,4 @@ export class HousekeepingController {
     return this.housekeepingService.updateChecklist(id, checklist);
   }
 }
+

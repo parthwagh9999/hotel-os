@@ -20,3 +20,4 @@ export const TenantId = createParamDecorator(
     return request.headers['x-tenant-id'] || request.params?.hotelId || request.body?.hotelId || request.query?.hotelId;
   }
 );
+

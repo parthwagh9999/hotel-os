@@ -91,3 +91,4 @@ export class AuthController {
     return this.authService.logout(userId);
   }
 }
+

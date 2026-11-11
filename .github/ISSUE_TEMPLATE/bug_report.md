@@ -24,3 +24,4 @@ A clear and concise description of what you expected to happen.
 - Python Version: [e.g. 3.13.x]
 - Browser: [e.g. Chrome, Safari, Firefox]
 - Database: PostgreSQL 16
+

@@ -54,3 +54,4 @@ export class AdminController {
     return this.adminService.toggleUserActive(id);
   }
 }
+

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { calculateGSTRate } from '@hotel-os/shared';
 import { api } from '../../../src/lib/api';
-import { findDemoHotelBySlug, saveBookingRecord } from '../../../src/lib/demo-data';
+import { DEMO_HOTELS, findDemoHotelBySlug, saveBookingRecord } from '../../../src/lib/demo-data';
 
 function BookingCheckoutContent() {
   const params = useParams();
@@ -24,7 +24,10 @@ function BookingCheckoutContent() {
   const searchParams = useSearchParams();
   const hotelSlug = (params?.hotelSlug as string) || 'the-grand-palace-hotel';
 
-  const hotel = findDemoHotelBySlug(hotelSlug);
+  const [hotel, setHotel] = useState(() => DEMO_HOTELS.find((h) => h.slug === hotelSlug) || DEMO_HOTELS[0]);
+  useEffect(() => {
+    setHotel(findDemoHotelBySlug(hotelSlug));
+  }, [hotelSlug]);
   const categoryId = searchParams.get('category');
   const selectedCategory =
     hotel.roomCategories.find((c) => c.id === categoryId) || hotel.roomCategories[0];

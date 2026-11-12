@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import {
   UserCheck,
@@ -12,6 +12,11 @@ import {
   Building,
 } from 'lucide-react';
 import { api } from '../../../src/lib/api';
+import {
+  getAllBookings,
+  saveBookingRecord,
+  updateBookingStatusRecord,
+} from '../../../src/lib/demo-data';
 
 export default function FrontDeskPMSPage() {
   const [arrivals, setArrivals] = useState([
@@ -25,6 +30,40 @@ export default function FrontDeskPMSPage() {
     { id: 'b5', ref: 'HOS-1M8B4V', guest: 'Siddharth Sen', phone: '+91 98450 33445', room: '105', category: 'Standard Room', status: 'CHECKED_IN', balance: 0 },
   ]);
 
+  useEffect(() => {
+    const stored = getAllBookings();
+    const extraArrivals = stored
+      .filter((b) => b.status === 'CONFIRMED' && b.bookingRef !== 'HOS-7K2X9P')
+      .map((b, i) => ({
+        id: b.bookingRef,
+        ref: b.bookingRef,
+        guest: b.guestName,
+        phone: b.guestPhone || '+91 98765 43210',
+        room: `${210 + i}`,
+        category: `${b.categoryName} (${b.hotelName})`,
+        status: 'CONFIRMED',
+        checkInTime: '14:00',
+      }));
+    const extraInHouse = stored
+      .filter((b) => b.status === 'CHECKED_IN')
+      .map((b, i) => ({
+        id: b.bookingRef,
+        ref: b.bookingRef,
+        guest: b.guestName,
+        phone: b.guestPhone || '+91 98765 43210',
+        room: `${310 + i}`,
+        category: `${b.categoryName} (${b.hotelName})`,
+        status: 'CHECKED_IN',
+        balance: 0,
+      }));
+    if (extraArrivals.length > 0) {
+      setArrivals((prev) => [...extraArrivals, ...prev]);
+    }
+    if (extraInHouse.length > 0) {
+      setDepartures((prev) => [...extraInHouse, ...prev]);
+    }
+  }, []);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [showWalkInModal, setShowWalkInModal] = useState(false);
   const [walkInName, setWalkInName] = useState('');
@@ -34,6 +73,7 @@ export default function FrontDeskPMSPage() {
   const handleCheckIn = async (bookingId: string) => {
     const item = arrivals.find((a) => a.id === bookingId);
     if (item) {
+      updateBookingStatusRecord(item.ref, 'CHECKED_IN');
       setArrivals(arrivals.filter((a) => a.id !== bookingId));
       setDepartures([
         {
@@ -60,6 +100,9 @@ export default function FrontDeskPMSPage() {
 
   const handleCheckOut = async (bookingId: string) => {
     const item = departures.find((d) => d.id === bookingId);
+    if (item) {
+      updateBookingStatusRecord(item.ref, 'CHECKED_OUT');
+    }
     setDepartures(departures.filter((d) => d.id !== bookingId));
     toast.success(
       `${item?.guest || 'Guest'} checked out! Room #${item?.room || ''} queued for Housekeeping sanitization.`
@@ -76,9 +119,10 @@ export default function FrontDeskPMSPage() {
     e.preventDefault();
     if (!walkInName.trim()) return;
 
+    const ref = `HOS-W${Math.floor(1000 + Math.random() * 9000)}`;
     const newBooking = {
-      id: `walkin-${Date.now()}`,
-      ref: `HOS-W${Math.floor(1000 + Math.random() * 9000)}`,
+      id: ref,
+      ref,
       guest: walkInName.trim(),
       phone: '+91 98000 00000',
       room: walkInRoom,
@@ -86,6 +130,31 @@ export default function FrontDeskPMSPage() {
       status: 'CHECKED_IN',
       balance: 0,
     };
+
+    const nightsCount = Math.max(1, Number(walkInNights) || 1);
+    const total = Math.round(12500 * nightsCount * 1.18);
+    saveBookingRecord({
+      bookingRef: ref,
+      hotelSlug: 'the-grand-palace-hotel',
+      hotelName: 'The Grand Palace Hotel & Spa',
+      hotelAddress: 'Apollo Bunder, Colaba, Mumbai 400001',
+      city: 'Mumbai',
+      categoryName: 'Deluxe Heritage Room',
+      guestName: newBooking.guest,
+      guestEmail: 'walkin@demo-hotel.com',
+      guestPhone: newBooking.phone,
+      guests: 2,
+      checkIn: new Date().toISOString().split('T')[0],
+      checkOut: new Date(Date.now() + nightsCount * 86400000).toISOString().split('T')[0],
+      nights: nightsCount,
+      nightlyRate: 12500,
+      gstPercent: 18,
+      taxAmount: Math.round(12500 * nightsCount * 0.18),
+      totalAmount: total,
+      paymentMethod: 'CASH',
+      status: 'CHECKED_IN',
+      createdAt: new Date().toISOString(),
+    });
 
     setDepartures([newBooking, ...departures]);
     setShowWalkInModal(false);

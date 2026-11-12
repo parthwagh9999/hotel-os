@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   BedDouble,
@@ -10,6 +10,7 @@ import {
   AlertCircle,
   Info,
 } from 'lucide-react';
+import { getAllBookings } from '../../../src/lib/demo-data';
 
 type DateRangeKey = 'TODAY' | 'LAST_7' | 'THIS_MONTH';
 
@@ -70,12 +71,29 @@ export default function HotelDashboardPage() {
   const [range, setRange] = useState<DateRangeKey>('TODAY');
   const stats = PERIOD_METRICS[range];
 
-  const recentBookings = [
-    { ref: 'HOS-7K2X9P', guest: 'Dr. Anita Roy', room: '204', type: 'Deluxe Heritage', status: 'CONFIRMED', amount: 37500 },
+  const [recentBookings, setRecentBookings] = useState([
+    { ref: 'HOS-7K2X9P', guest: 'Dr. Anita Roy', room: '204', type: 'Deluxe Heritage', status: 'CONFIRMED', amount: 44250 },
     { ref: 'HOS-9N4L2Q', guest: 'Rohan Deshmukh', room: '302', type: 'Executive Suite', status: 'CHECKED_IN', amount: 55500 },
     { ref: 'HOS-1M8B4V', guest: 'Siddharth Sen', room: '105', type: 'Standard Room', status: 'CHECKED_IN', amount: 18000 },
     { ref: 'HOS-4P6C8W', guest: 'Kavita Iyer', room: '401', type: 'Presidential Suite', status: 'CONFIRMED', amount: 105000 },
-  ];
+  ]);
+
+  useEffect(() => {
+    const stored = getAllBookings();
+    const mapped = stored
+      .filter((b) => !['HOS-7K2X9P', 'HOS-2R8K4M'].includes(b.bookingRef))
+      .map((b, i) => ({
+        ref: b.bookingRef,
+        guest: b.guestName,
+        room: `${210 + i}`,
+        type: `${b.categoryName}`,
+        status: b.status,
+        amount: b.totalAmount,
+      }));
+    if (mapped.length > 0) {
+      setRecentBookings((prev) => [...mapped, ...prev].slice(0, 8));
+    }
+  }, []);
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto">

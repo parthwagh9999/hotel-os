@@ -17,7 +17,7 @@ export interface DemoHotel {
   id: string;
   name: string;
   slug: string;
-  type: 'HOTEL' | 'RESORT' | 'BOUTIQUE';
+  type: 'HOTEL' | 'RESORT' | 'BOUTIQUE' | 'HOMESTAY' | 'HOSTEL' | 'VILLA';
   starRating: number;
   avgRating: number;
   totalReviews: number;
@@ -31,6 +31,11 @@ export interface DemoHotel {
   checkOutTime: string;
   cancellationPolicyHours: number;
   heroImage: string;
+  status?: 'APPROVED' | 'SUBMITTED' | 'UNDER_REVIEW' | 'REJECTED';
+  owner?: string;
+  email?: string;
+  roomsCount?: number;
+  plan?: string;
   roomCategories: DemoRoomCategory[];
   reviews: Array<{
     id: string;
@@ -272,13 +277,211 @@ export const DEMO_HOTELS: DemoHotel[] = [
   },
 ];
 
-export function findDemoHotelBySlug(slug?: string): DemoHotel {
-  if (!slug) return DEMO_HOTELS[0];
-  return DEMO_HOTELS.find((h) => h.slug === slug) || DEMO_HOTELS[0];
-}
-
+const HOTELS_STORAGE_KEY = 'hotel_os_demo_hotels';
 const BOOKINGS_STORAGE_KEY = 'hotel_os_demo_bookings';
 const FAVOURITES_STORAGE_KEY = 'hotel_os_favourites';
+
+const DEFAULT_ADMIN_SEED_HOTELS: DemoHotel[] = [
+  ...DEMO_HOTELS.map((h, i) => ({
+    ...h,
+    status: 'APPROVED' as const,
+    owner: i === 0 ? 'Rajesh Patel' : i === 1 ? 'Suresh Rao' : 'Vikram Naik',
+    email: i === 0 ? 'owner@demo-hotel.com' : i === 1 ? 'suresh@budgetinn.com' : 'vikram@azurepalms.com',
+    roomsCount: i === 0 ? 40 : i === 1 ? 25 : 32,
+    plan: i === 1 ? 'STARTER' : 'PROFESSIONAL',
+  })),
+  {
+    id: 'h3',
+    name: 'Seaside Paradise Villa Resort',
+    slug: 'seaside-paradise-villa',
+    type: 'RESORT',
+    starRating: 4,
+    avgRating: 4.7,
+    totalReviews: 45,
+    city: 'Goa',
+    address: 'Calangute Beach Road, North Goa 403516',
+    minPrice: 7200,
+    isFeatured: false,
+    status: 'SUBMITTED',
+    owner: 'Maria D’Souza',
+    email: 'maria@seasidegoa.com',
+    roomsCount: 18,
+    plan: 'PROFESSIONAL',
+    description: 'Boutique coastal resort minutes from Candolim & Calangute beaches with tropical pool access.',
+    amenities: ['Swimming Pool', 'Free Wi-Fi', 'Breakfast Included', 'Airport Shuttle'],
+    checkInTime: '14:00',
+    checkOutTime: '11:00',
+    cancellationPolicyHours: 24,
+    heroImage: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1200&q=80',
+    roomCategories: [
+      {
+        id: 'cat-seaside-std',
+        name: 'Coastal Breeze Suite',
+        bedType: 'King Bed',
+        bedCount: 1,
+        maxOccupancy: 2,
+        basePrice: 7200,
+        roomSize: '38 sq.m',
+        amenities: ['Balcony', 'Fast Wi-Fi', 'Breakfast'],
+        availableCount: 8,
+        image: 'https://images.unsplash.com/photo-1591088398332-8a7791972843?auto=format&fit=crop&w=600&q=80',
+      },
+    ],
+    reviews: [],
+  },
+  {
+    id: 'h4',
+    name: 'Hilltop Haven Homestay',
+    slug: 'hilltop-haven-homestay',
+    type: 'HOMESTAY',
+    starRating: 4,
+    avgRating: 4.6,
+    totalReviews: 28,
+    city: 'Manali',
+    address: 'Old Manali Orchards, Himachal Pradesh 175131',
+    minPrice: 4200,
+    isFeatured: false,
+    status: 'UNDER_REVIEW',
+    owner: 'Virender Thakur',
+    email: 'virender@hilltophaven.com',
+    roomsCount: 8,
+    plan: 'STARTER',
+    description: 'Warm Himalayan wooden lodge surrounded by apple orchards and panoramic mountain views.',
+    amenities: ['Mountain View', 'Fireplace', 'Free Parking', 'Home-cooked Dining'],
+    checkInTime: '13:00',
+    checkOutTime: '11:00',
+    cancellationPolicyHours: 48,
+    heroImage: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80',
+    roomCategories: [
+      {
+        id: 'cat-manali-pine',
+        name: 'Cedar Valley Room',
+        bedType: 'Queen Bed',
+        bedCount: 1,
+        maxOccupancy: 2,
+        basePrice: 4200,
+        roomSize: '28 sq.m',
+        amenities: ['Heater', 'Balcony', 'Tea Kettle'],
+        availableCount: 5,
+        image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=600&q=80',
+      },
+    ],
+    reviews: [],
+  },
+];
+
+export function getAllStoredHotels(): DemoHotel[] {
+  if (typeof window === 'undefined') return DEFAULT_ADMIN_SEED_HOTELS;
+  try {
+    const raw = localStorage.getItem(HOTELS_STORAGE_KEY);
+    if (!raw) {
+      localStorage.setItem(HOTELS_STORAGE_KEY, JSON.stringify(DEFAULT_ADMIN_SEED_HOTELS));
+      return DEFAULT_ADMIN_SEED_HOTELS;
+    }
+    return JSON.parse(raw) as DemoHotel[];
+  } catch {
+    return DEFAULT_ADMIN_SEED_HOTELS;
+  }
+}
+
+export function getApprovedHotels(): DemoHotel[] {
+  return getAllStoredHotels().filter((h) => !h.status || h.status === 'APPROVED');
+}
+
+export function findDemoHotelBySlug(slug?: string): DemoHotel {
+  const all = getAllStoredHotels();
+  if (!slug) return all[0];
+  return all.find((h) => h.slug === slug) || all[0];
+}
+
+export function saveNewHotelListing(input: {
+  name: string;
+  type: string;
+  city: string;
+  street: string;
+  state: string;
+  zipCode: string;
+  contactEmail: string;
+  contactPhone: string;
+  totalRooms: number;
+  plan: string;
+}): DemoHotel {
+  const slug =
+    input.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '') || `hotel-${Date.now()}`;
+  const uniqueSlug = `${slug}-${Date.now().toString().slice(-4)}`;
+
+  const newHotel: DemoHotel = {
+    id: `hotel-${Date.now()}`,
+    name: input.name,
+    slug: uniqueSlug,
+    type: (input.type as DemoHotel['type']) || 'HOTEL',
+    starRating: 4,
+    avgRating: 4.8,
+    totalReviews: 1,
+    city: input.city || 'Mumbai',
+    address: `${input.street || 'Central Avenue'}, ${input.city}, ${input.state} ${input.zipCode}`,
+    minPrice: 5500,
+    isFeatured: true,
+    status: 'SUBMITTED',
+    owner: 'Registered Partner',
+    email: input.contactEmail || 'partner@hotel.com',
+    roomsCount: input.totalRooms || 20,
+    plan: input.plan || 'PROFESSIONAL',
+    description: `${input.name} is a premier ${input.type.toLowerCase()} in ${input.city}, newly onboarded via Hotel OS.`,
+    amenities: ['Free High-Speed Wi-Fi', '24/7 Front Desk', 'Complimentary Breakfast', 'Room Service'],
+    checkInTime: '14:00',
+    checkOutTime: '11:00',
+    cancellationPolicyHours: 24,
+    heroImage: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80',
+    roomCategories: [
+      {
+        id: `cat-${Date.now()}-1`,
+        name: 'Premier Deluxe Room',
+        bedType: 'King Bed',
+        bedCount: 1,
+        maxOccupancy: 2,
+        basePrice: 5500,
+        roomSize: '34 sq.m',
+        amenities: ['City View', 'Fast Wi-Fi', 'Smart TV', 'Work Desk'],
+        availableCount: Math.max(2, Math.floor((input.totalRooms || 20) / 2)),
+        image: 'https://images.unsplash.com/photo-1591088398332-8a7791972843?auto=format&fit=crop&w=600&q=80',
+      },
+      {
+        id: `cat-${Date.now()}-2`,
+        name: 'Executive Suite',
+        bedType: 'California King',
+        bedCount: 1,
+        maxOccupancy: 3,
+        basePrice: 9500,
+        roomSize: '58 sq.m',
+        amenities: ['Lounge Access', 'Breakfast Included', 'Mini Bar'],
+        availableCount: Math.max(1, Math.floor((input.totalRooms || 20) / 4)),
+        image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=600&q=80',
+      },
+    ],
+    reviews: [],
+  };
+
+  if (typeof window !== 'undefined') {
+    const existing = getAllStoredHotels();
+    localStorage.setItem(HOTELS_STORAGE_KEY, JSON.stringify([newHotel, ...existing]));
+  }
+  return newHotel;
+}
+
+export function updateHotelListingStatus(
+  hotelId: string,
+  status: 'APPROVED' | 'REJECTED' | 'UNDER_REVIEW'
+): DemoHotel[] {
+  const updated = getAllStoredHotels().map((h) => (h.id === hotelId ? { ...h, status } : h));
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(HOTELS_STORAGE_KEY, JSON.stringify(updated));
+  }
+  return updated;
+}
 
 const DEFAULT_BOOKINGS: StoredBooking[] = [
   {
@@ -354,9 +557,16 @@ export function saveBookingRecord(booking: StoredBooking): void {
 }
 
 export function cancelBookingRecord(bookingRef: string): StoredBooking[] {
+  return updateBookingStatusRecord(bookingRef, 'CANCELLED');
+}
+
+export function updateBookingStatusRecord(
+  bookingRef: string,
+  status: StoredBooking['status']
+): StoredBooking[] {
   if (typeof window === 'undefined') return DEFAULT_BOOKINGS;
   const updated = getAllBookings().map((b) =>
-    b.bookingRef === bookingRef ? { ...b, status: 'CANCELLED' as const } : b
+    b.bookingRef === bookingRef ? { ...b, status } : b
   );
   localStorage.setItem(BOOKINGS_STORAGE_KEY, JSON.stringify(updated));
   return updated;

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import {
   ShieldCheck,
@@ -9,58 +9,37 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { api } from '../../src/lib/api';
+import { getAllStoredHotels, updateHotelListingStatus } from '../../src/lib/demo-data';
+
+interface AdminHotelRow {
+  id: string;
+  name: string;
+  city: string;
+  type: string;
+  rooms: number;
+  owner: string;
+  email: string;
+  status: string;
+  plan: string;
+}
 
 export default function SuperAdminPortalPage() {
-  const [hotels, setHotels] = useState([
-    {
-      id: 'h1',
-      name: 'The Grand Palace Hotel & Spa',
-      city: 'Mumbai',
-      type: 'Luxury Hotel',
-      rooms: 40,
-      owner: 'Rajesh Patel',
-      email: 'owner@demo-hotel.com',
-      status: 'APPROVED',
-      plan: 'PROFESSIONAL',
-      joinedDate: '01 May 2025',
-    },
-    {
-      id: 'h2',
-      name: 'Budget Inn Executive Mumbai',
-      city: 'Mumbai',
-      type: 'Business Hotel',
-      rooms: 25,
-      owner: 'Suresh Rao',
-      email: 'suresh@budgetinn.com',
-      status: 'APPROVED',
-      plan: 'STARTER',
-      joinedDate: '15 May 2025',
-    },
-    {
-      id: 'h3',
-      name: 'Seaside Paradise Villa Resort',
-      city: 'Goa',
-      type: 'Resort',
-      rooms: 18,
-      owner: 'Maria D’Souza',
-      email: 'maria@seasidegoa.com',
-      status: 'SUBMITTED',
-      plan: 'PROFESSIONAL',
-      joinedDate: 'Yesterday',
-    },
-    {
-      id: 'h4',
-      name: 'Hilltop Haven Homestay',
-      city: 'Manali',
-      type: 'Homestay',
-      rooms: 8,
-      owner: 'Virender Thakur',
-      email: 'virender@hilltophaven.com',
-      status: 'UNDER_REVIEW',
-      plan: 'STARTER',
-      joinedDate: '2 days ago',
-    },
-  ]);
+  const [hotels, setHotels] = useState<AdminHotelRow[]>([]);
+
+  useEffect(() => {
+    const stored = getAllStoredHotels().map((h) => ({
+      id: h.id,
+      name: h.name,
+      city: h.city,
+      type: h.type,
+      rooms: h.roomsCount || 25,
+      owner: h.owner || 'Property Partner',
+      email: h.email || 'partner@hotel.com',
+      status: h.status || 'APPROVED',
+      plan: h.plan || 'PROFESSIONAL',
+    }));
+    setHotels(stored);
+  }, []);
 
   const [users, setUsers] = useState([
     { id: 'u1', name: 'Super Admin', email: 'admin@hotel-os.dev', role: 'SUPER_ADMIN', status: 'ACTIVE', hotel: 'Global Platform' },
@@ -74,6 +53,7 @@ export default function SuperAdminPortalPage() {
 
   const handleApproveHotel = async (hotelId: string) => {
     const target = hotels.find((h) => h.id === hotelId);
+    updateHotelListingStatus(hotelId, 'APPROVED');
     setHotels(hotels.map((h) => (h.id === hotelId ? { ...h, status: 'APPROVED' } : h)));
     toast.success(`${target?.name || 'Hotel'} approved! Public booking enabled.`);
 
@@ -84,6 +64,7 @@ export default function SuperAdminPortalPage() {
 
   const handleRejectHotel = async (hotelId: string) => {
     const target = hotels.find((h) => h.id === hotelId);
+    updateHotelListingStatus(hotelId, 'REJECTED');
     setHotels(hotels.map((h) => (h.id === hotelId ? { ...h, status: 'REJECTED' } : h)));
     toast.error(`${target?.name || 'Hotel'} application rejected.`);
 

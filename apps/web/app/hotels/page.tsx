@@ -18,6 +18,7 @@ import {
 import { api } from '../../src/lib/api';
 import {
   DEMO_HOTELS,
+  getApprovedHotels,
   getFavouriteSlugs,
   toggleFavouriteSlug,
 } from '../../src/lib/demo-data';
@@ -76,6 +77,23 @@ function HotelsListingContent() {
 
   useEffect(() => {
     setFavourites(getFavouriteSlugs());
+    setHotels(
+      getApprovedHotels().map((h) => ({
+        id: h.id,
+        name: h.name,
+        slug: h.slug,
+        city: h.city,
+        type: h.type,
+        starRating: h.starRating,
+        avgRating: h.avgRating,
+        totalReviews: h.totalReviews,
+        minPrice: h.minPrice,
+        amenities: h.amenities,
+        description: h.description,
+        isFeatured: h.isFeatured,
+        heroImage: h.heroImage,
+      }))
+    );
   }, []);
 
   useEffect(() => {

@@ -1,21 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
-import {
-  Calendar,
-  Users,
-  TrendingUp,
-  Sparkles,
-  AlertTriangle,
-  CheckCircle2,
-  Clock,
-  ArrowUpRight,
-  Filter,
-  UserCheck,
-  BedDouble,
-  Info,
-} from 'lucide-react';
 
 interface HeatmapDay {
   date: string;
@@ -233,3 +218,4 @@ export default function SmartHeatmapPage() {
     </div>
   );
 }
+

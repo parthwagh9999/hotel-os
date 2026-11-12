@@ -48,20 +48,22 @@ export class HousekeepingController {
   @Patch('tasks/:id/status')
   @ApiOperation({ summary: 'Update cleaning progress (Assigned -> In Progress -> Completed -> Inspected)' })
   updateTaskStatus(
+    @Param('hotelId') hotelId: string,
     @Param('id') id: string,
     @Body('status') status: string,
     @CurrentUser('firstName') inspectorName: string
   ) {
-    return this.housekeepingService.updateTaskStatus(id, status, inspectorName);
+    return this.housekeepingService.updateTaskStatus(hotelId, id, status, inspectorName);
   }
 
   @Patch('tasks/:id/checklist')
   @ApiOperation({ summary: 'Update cleaning checklist items' })
   updateChecklist(
+    @Param('hotelId') hotelId: string,
     @Param('id') id: string,
     @Body('checklist') checklist: Array<{ item: string; completed: boolean }>
   ) {
-    return this.housekeepingService.updateChecklist(id, checklist);
+    return this.housekeepingService.updateChecklist(hotelId, id, checklist);
   }
 }
 

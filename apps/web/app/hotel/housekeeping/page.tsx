@@ -1,16 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
+import { toast } from 'sonner';
 import {
-  Sparkles,
   CheckCircle2,
-  Clock,
-  AlertTriangle,
   CheckSquare,
   Square,
   ShieldCheck,
   User,
-  Filter,
 } from 'lucide-react';
 import { api } from '../../../src/lib/api';
 
@@ -78,20 +75,11 @@ export default function HousekeepingPage() {
     );
   };
 
-  // Move status workflow
   const advanceStatus = async (taskId: string, currentStatus: string) => {
     let nextStatus = 'ASSIGNED';
     if (currentStatus === 'ASSIGNED') nextStatus = 'IN_PROGRESS';
     else if (currentStatus === 'IN_PROGRESS') nextStatus = 'COMPLETED';
     else if (currentStatus === 'COMPLETED') nextStatus = 'INSPECTED';
-
-    try {
-      await api.patch(`/hotels/demo/housekeeping/tasks/${taskId}/status`, {
-        status: nextStatus,
-      });
-    } catch {
-      // client update
-    }
 
     setTasks(
       tasks.map((t) => {
@@ -103,7 +91,17 @@ export default function HousekeepingPage() {
     );
 
     if (nextStatus === 'INSPECTED') {
-      alert(`Room inspected and marked as AVAILABLE in inventory!`);
+      toast.success('Room inspected and restored to AVAILABLE in live inventory!');
+    } else {
+      toast.success(`Housekeeping task status updated to ${nextStatus.replace(/_/g, ' ')}`);
+    }
+
+    try {
+      await api.patch(`/hotels/demo/housekeeping/tasks/${taskId}/status`, {
+        status: nextStatus,
+      });
+    } catch {
+      // Offline demo mode uses instant optimistic state
     }
   };
 

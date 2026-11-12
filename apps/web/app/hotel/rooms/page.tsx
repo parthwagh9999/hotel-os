@@ -1,17 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import {
-  BedDouble,
-  Plus,
-  Filter,
-  CheckCircle2,
-  Clock,
-  AlertTriangle,
-  Building,
-  DollarSign,
-  Sparkles,
-} from 'lucide-react';
+import { toast } from 'sonner';
+import { Plus, Search } from 'lucide-react';
 import { api } from '../../../src/lib/api';
 
 export default function RoomInventoryPage() {
@@ -32,34 +23,58 @@ export default function RoomInventoryPage() {
 
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [floorFilter, setFloorFilter] = useState('ALL');
+  const [searchRoom, setSearchRoom] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [newRoomNumber, setNewRoomNumber] = useState('');
   const [newFloor, setNewFloor] = useState('1');
   const [newCategory, setNewCategory] = useState('Deluxe Heritage');
 
+  // Dynamic live status counts computed directly from state
+  const counts = {
+    ALL: rooms.length,
+    AVAILABLE: rooms.filter((r) => r.status === 'AVAILABLE').length,
+    OCCUPIED: rooms.filter((r) => r.status === 'OCCUPIED').length,
+    RESERVED: rooms.filter((r) => r.status === 'RESERVED').length,
+    CLEANING: rooms.filter((r) => r.status.startsWith('CLEANING')).length,
+    MAINTENANCE: rooms.filter((r) => r.status === 'MAINTENANCE').length,
+  };
+
   const filteredRooms = rooms.filter((r) => {
-    if (statusFilter !== 'ALL' && r.status !== statusFilter) return false;
+    if (statusFilter === 'CLEANING' && !r.status.startsWith('CLEANING')) return false;
+    if (statusFilter !== 'ALL' && statusFilter !== 'CLEANING' && r.status !== statusFilter) return false;
     if (floorFilter !== 'ALL' && r.floor !== Number(floorFilter)) return false;
+    if (
+      searchRoom.trim() &&
+      !`${r.roomNumber} ${r.category}`.toLowerCase().includes(searchRoom.trim().toLowerCase())
+    ) {
+      return false;
+    }
     return true;
   });
 
   const handleStatusChange = async (roomId: string, newStatus: string) => {
+    const target = rooms.find((r) => r.id === roomId);
+    setRooms(rooms.map((r) => (r.id === roomId ? { ...r, status: newStatus } : r)));
+    toast.success(`Room #${target?.roomNumber || ''} updated to ${newStatus.replace(/_/g, ' ')}`);
+
     try {
       await api.patch(`/hotels/demo/rooms/${roomId}/status`, { status: newStatus });
     } catch {}
-
-    setRooms(
-      rooms.map((r) => (r.id === roomId ? { ...r, status: newStatus } : r))
-    );
   };
 
   const handleAddRoom = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newRoomNumber) return;
+    const num = newRoomNumber.trim();
+    if (!num) return;
+
+    if (rooms.some((r) => r.roomNumber === num)) {
+      toast.error(`Room #${num} already exists in inventory`);
+      return;
+    }
 
     const newRoom = {
       id: `room-${Date.now()}`,
-      roomNumber: newRoomNumber,
+      roomNumber: num,
       floor: Number(newFloor),
       category: newCategory,
       status: 'AVAILABLE',
@@ -69,7 +84,7 @@ export default function RoomInventoryPage() {
     setRooms([...rooms, newRoom]);
     setShowAddModal(false);
     setNewRoomNumber('');
-    alert(`Room #${newRoomNumber} added to inventory successfully!`);
+    toast.success(`Room #${num} added to inventory!`);
   };
 
   return (
@@ -89,6 +104,7 @@ export default function RoomInventoryPage() {
         </div>
 
         <button
+          type="button"
           onClick={() => setShowAddModal(true)}
           className="flex items-center gap-2 rounded-xl bg-amber-600 px-5 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-amber-700 transition-colors"
         >
@@ -99,19 +115,20 @@ export default function RoomInventoryPage() {
 
       {/* ─── Filters Bar ───────────────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm text-xs font-semibold">
-        {/* Status Filters */}
+        {/* Status Filters (Live Computed Counts) */}
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="text-slate-400 mr-1 uppercase text-[10px] font-bold">Status:</span>
           {[
-            { label: 'All (12)', value: 'ALL' },
-            { label: 'Available (5)', value: 'AVAILABLE' },
-            { label: 'Occupied (3)', value: 'OCCUPIED' },
-            { label: 'Reserved (2)', value: 'RESERVED' },
-            { label: 'Cleaning (2)', value: 'CLEANING_REQUIRED' },
-            { label: 'Maintenance (1)', value: 'MAINTENANCE' },
+            { label: `All (${counts.ALL})`, value: 'ALL' },
+            { label: `Available (${counts.AVAILABLE})`, value: 'AVAILABLE' },
+            { label: `Occupied (${counts.OCCUPIED})`, value: 'OCCUPIED' },
+            { label: `Reserved (${counts.RESERVED})`, value: 'RESERVED' },
+            { label: `Cleaning (${counts.CLEANING})`, value: 'CLEANING' },
+            { label: `Maintenance (${counts.MAINTENANCE})`, value: 'MAINTENANCE' },
           ].map((s) => (
             <button
               key={s.value}
+              type="button"
               onClick={() => setStatusFilter(s.value)}
               className={`px-3 py-1.5 rounded-lg transition-colors ${
                 statusFilter === s.value
@@ -124,12 +141,22 @@ export default function RoomInventoryPage() {
           ))}
         </div>
 
-        {/* Floor Filter */}
+        {/* Search & Floor Filter */}
         <div className="flex items-center gap-2">
-          <span className="text-slate-400 uppercase text-[10px] font-bold">Floor:</span>
+          <div className="relative">
+            <Search className="h-3.5 w-3.5 text-slate-400 absolute left-2.5 top-2" />
+            <input
+              type="text"
+              value={searchRoom}
+              onChange={(e) => setSearchRoom(e.target.value)}
+              placeholder="Find room #"
+              className="rounded-lg border border-slate-200 pl-7 pr-2.5 py-1.5 text-xs text-slate-700 focus:outline-none w-32"
+            />
+          </div>
           <select
             value={floorFilter}
             onChange={(e) => setFloorFilter(e.target.value)}
+            aria-label="Filter by floor"
             className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 focus:outline-none"
           >
             <option value="ALL">All Floors</option>
@@ -137,6 +164,7 @@ export default function RoomInventoryPage() {
             <option value="2">Floor 2</option>
             <option value="3">Floor 3</option>
             <option value="4">Floor 4</option>
+            <option value="5">Floor 5</option>
           </select>
         </div>
       </div>
@@ -163,7 +191,7 @@ export default function RoomInventoryPage() {
                   <span
                     className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase border ${statusColor}`}
                   >
-                    {room.status.replace('_', ' ')}
+                    {room.status.replace(/_/g, ' ')}
                   </span>
                 </div>
 
@@ -181,16 +209,17 @@ export default function RoomInventoryPage() {
                   </div>
                 </div>
 
-                {/* Status Toggle Action */}
                 <select
                   value={room.status}
                   onChange={(e) => handleStatusChange(room.id, e.target.value)}
+                  aria-label={`Change status for Room ${room.roomNumber}`}
                   className="text-[11px] font-bold rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-slate-700 focus:outline-none"
                 >
                   <option value="AVAILABLE">Available</option>
                   <option value="OCCUPIED">Occupied</option>
                   <option value="RESERVED">Reserved</option>
                   <option value="CLEANING_REQUIRED">Clean Needed</option>
+                  <option value="CLEANING_IN_PROGRESS">Cleaning Now</option>
                   <option value="MAINTENANCE">Maintenance</option>
                 </select>
               </div>
@@ -206,6 +235,7 @@ export default function RoomInventoryPage() {
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-bold text-base text-slate-900">Add Room to Property</h3>
               <button
+                type="button"
                 onClick={() => setShowAddModal(false)}
                 className="text-slate-400 hover:text-slate-600"
               >
@@ -279,4 +309,3 @@ export default function RoomInventoryPage() {
     </div>
   );
 }
-

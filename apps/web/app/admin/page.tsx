@@ -1,18 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
+import { toast } from 'sonner';
 import {
   ShieldCheck,
-  Building2,
-  Users,
-  CreditCard,
   CheckCircle2,
   XCircle,
-  AlertTriangle,
   TrendingUp,
-  Search,
-  Filter,
-  ArrowUpRight,
 } from 'lucide-react';
 import { api } from '../../src/lib/api';
 
@@ -76,42 +70,46 @@ export default function SuperAdminPortalPage() {
   ]);
 
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [commissionRate, setCommissionRate] = useState(10);
 
   const handleApproveHotel = async (hotelId: string) => {
+    const target = hotels.find((h) => h.id === hotelId);
+    setHotels(hotels.map((h) => (h.id === hotelId ? { ...h, status: 'APPROVED' } : h)));
+    toast.success(`${target?.name || 'Hotel'} approved! Public booking enabled.`);
+
     try {
       await api.patch(`/admin/hotels/${hotelId}/status`, { status: 'APPROVED' });
     } catch {}
-
-    setHotels(
-      hotels.map((h) => (h.id === hotelId ? { ...h, status: 'APPROVED' } : h))
-    );
-    alert('Hotel approved! Property is now publicly bookable across the platform.');
   };
 
   const handleRejectHotel = async (hotelId: string) => {
+    const target = hotels.find((h) => h.id === hotelId);
+    setHotels(hotels.map((h) => (h.id === hotelId ? { ...h, status: 'REJECTED' } : h)));
+    toast.error(`${target?.name || 'Hotel'} application rejected.`);
+
     try {
       await api.patch(`/admin/hotels/${hotelId}/status`, { status: 'REJECTED' });
     } catch {}
-
-    setHotels(
-      hotels.map((h) => (h.id === hotelId ? { ...h, status: 'REJECTED' } : h))
-    );
   };
 
-  const handleToggleUser = (userId: string) => {
+  const handleToggleUser = async (userId: string) => {
+    const target = users.find((u) => u.id === userId);
+    const nextStatus = target?.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
     setUsers(
-      users.map((u) =>
-        u.id === userId
-          ? { ...u, status: u.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE' }
-          : u
-      )
+      users.map((u) => (u.id === userId ? { ...u, status: nextStatus } : u))
     );
+    toast.success(`User ${target?.name || ''} marked ${nextStatus}`);
+
+    try {
+      await api.patch(`/admin/users/${userId}/toggle-active`);
+    } catch {}
   };
 
   const pendingCount = hotels.filter((h) => h.status === 'SUBMITTED' || h.status === 'UNDER_REVIEW').length;
+  const filteredHotels = hotels.filter((h) => (statusFilter === 'ALL' ? true : h.status === statusFilter));
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto py-6 px-4 sm:px-6">
+    <div className="space-y-8 max-w-7xl mx-auto">
       {/* ─── Top Header ────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
         <div>
@@ -152,8 +150,10 @@ export default function SuperAdminPortalPage() {
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-1">
-          <span className="text-xs font-bold text-slate-400">Platform Take-Rate (10%)</span>
-          <div className="text-3xl font-extrabold text-emerald-600">₹8.42 Lakhs</div>
+          <span className="text-xs font-bold text-slate-400">Platform Take-Rate ({commissionRate}%)</span>
+          <div className="text-3xl font-extrabold text-emerald-600">
+            ₹{(84.2 * (commissionRate / 100)).toFixed(2)} Lakhs
+          </div>
           <span className="text-xs text-slate-500">Commissions & SaaS MRR</span>
         </div>
 
@@ -172,10 +172,11 @@ export default function SuperAdminPortalPage() {
             <p className="text-xs text-slate-500">Review business registration, verify licenses, and activate hotel public booking.</p>
           </div>
 
-          <div className="flex items-center gap-1.5 text-xs font-semibold">
-            {['ALL', 'SUBMITTED', 'UNDER_REVIEW', 'APPROVED'].map((status) => (
+          <div className="flex flex-wrap items-center gap-1.5 text-xs font-semibold">
+            {['ALL', 'SUBMITTED', 'UNDER_REVIEW', 'APPROVED', 'REJECTED'].map((status) => (
               <button
                 key={status}
+                type="button"
                 onClick={() => setStatusFilter(status)}
                 className={`px-3 py-1.5 rounded-lg transition-colors ${
                   statusFilter === status
@@ -202,9 +203,14 @@ export default function SuperAdminPortalPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
-              {hotels
-                .filter((h) => (statusFilter === 'ALL' ? true : h.status === statusFilter))
-                .map((h) => (
+              {filteredHotels.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-slate-400">
+                    No hotels matching filter &quot;{statusFilter}&quot;.
+                  </td>
+                </tr>
+              ) : (
+                filteredHotels.map((h) => (
                   <tr key={h.id} className="hover:bg-slate-50/60 transition-colors">
                     <td className="py-4 px-4">
                       <div className="font-bold text-sm text-slate-900">{h.name}</div>
@@ -225,6 +231,8 @@ export default function SuperAdminPortalPage() {
                         className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold ${
                           h.status === 'APPROVED'
                             ? 'bg-emerald-100 text-emerald-800'
+                            : h.status === 'REJECTED'
+                            ? 'bg-red-100 text-red-700'
                             : h.status === 'SUBMITTED'
                             ? 'bg-amber-100 text-amber-800'
                             : 'bg-blue-100 text-blue-800'
@@ -237,17 +245,21 @@ export default function SuperAdminPortalPage() {
                       {h.status !== 'APPROVED' ? (
                         <div className="inline-flex items-center gap-2">
                           <button
+                            type="button"
                             onClick={() => handleApproveHotel(h.id)}
                             className="flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700"
                           >
                             <CheckCircle2 className="h-3.5 w-3.5" /> Approve
                           </button>
-                          <button
-                            onClick={() => handleRejectHotel(h.id)}
-                            className="flex items-center gap-1 rounded-lg bg-red-100 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-200"
-                          >
-                            <XCircle className="h-3.5 w-3.5" /> Reject
-                          </button>
+                          {h.status !== 'REJECTED' && (
+                            <button
+                              type="button"
+                              onClick={() => handleRejectHotel(h.id)}
+                              className="flex items-center gap-1 rounded-lg bg-red-100 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-200"
+                            >
+                              <XCircle className="h-3.5 w-3.5" /> Reject
+                            </button>
+                          )}
                         </div>
                       ) : (
                         <span className="text-[11px] font-semibold text-emerald-600">
@@ -256,7 +268,8 @@ export default function SuperAdminPortalPage() {
                       )}
                     </td>
                   </tr>
-                ))}
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -308,6 +321,7 @@ export default function SuperAdminPortalPage() {
                   </td>
                   <td className="py-3.5 px-4 text-right">
                     <button
+                      type="button"
                       onClick={() => handleToggleUser(u.id)}
                       className={`text-xs font-bold hover:underline ${
                         u.status === 'ACTIVE' ? 'text-red-600' : 'text-emerald-600'
@@ -322,7 +336,49 @@ export default function SuperAdminPortalPage() {
           </table>
         </div>
       </div>
+
+      {/* ─── SaaS Subscriptions & Platform Commission Control ─────────────── */}
+      <div id="subscriptions" className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+          <div>
+            <h2 className="text-base font-bold text-slate-900">SaaS Subscription Tiers & Platform Commission</h2>
+            <p className="text-xs text-slate-500">Configure marketplace take-rate commission and active tenant subscription quotas.</p>
+          </div>
+          <div className="flex items-center gap-3 text-xs">
+            <label htmlFor="commission-rate" className="font-bold text-slate-700">Commission Rate (%):</label>
+            <input
+              id="commission-rate"
+              type="number"
+              min="2"
+              max="25"
+              value={commissionRate}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                setCommissionRate(v);
+                toast.success(`Platform commission rate updated to ${v}%`);
+              }}
+              className="w-20 rounded-xl border border-slate-200 px-3 py-1.5 font-mono font-bold text-slate-900"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+          {[
+            { name: 'Starter Plan', price: '₹2,499/mo', activeHotels: 1, limit: 'Up to 30 rooms • 5 staff' },
+            { name: 'Professional Plan', price: '₹5,999/mo', activeHotels: 2, limit: 'Up to 100 rooms • AI Pricing' },
+            { name: 'Business Chain', price: '₹12,999/mo', activeHotels: 1, limit: 'Unlimited rooms • Multi-property' },
+          ].map((tier) => (
+            <div key={tier.name} className="rounded-xl border border-slate-200 p-4 space-y-1.5 bg-slate-50/50">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-sm text-slate-900">{tier.name}</span>
+                <span className="font-mono font-extrabold text-amber-700">{tier.price}</span>
+              </div>
+              <p className="text-slate-500">{tier.limit}</p>
+              <div className="pt-1 font-semibold text-emerald-700">{tier.activeHotels} Active Tenant(s)</div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
-

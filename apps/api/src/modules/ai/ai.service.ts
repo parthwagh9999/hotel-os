@@ -6,18 +6,6 @@ export class AiService {
   constructor(private prisma: PrismaService) {}
 
   async getOccupancyForecast(hotelId: string, days: number = 14) {
-    // Retrieve historical bookings for the hotel
-    const pastBookings = await this.prisma.booking.findMany({
-      where: {
-        hotelId,
-        status: { in: ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT'] },
-      },
-      select: {
-        checkIn: true,
-        checkOut: true,
-      },
-    });
-
     const totalRooms = await this.prisma.room.count({
       where: { hotelId, isActive: true },
     });

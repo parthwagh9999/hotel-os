@@ -1,24 +1,21 @@
 'use client';
 
 import React, { useState } from 'react';
+import { toast } from 'sonner';
 import {
-  IndianRupee,
-  Receipt,
   Download,
   Plus,
   TrendingUp,
-  CreditCard,
-  Building,
-  CheckCircle2,
   FileSpreadsheet,
 } from 'lucide-react';
+import { downloadTextFile, generateGstInvoiceHtml } from '../../../src/lib/demo-data';
 
 export default function HotelFinancePage() {
   const [invoices] = useState([
-    { number: 'INV-2025-001', guest: 'Dr. Anita Roy', amount: 42000, tax: 4500, date: '11 Jun 2025', status: 'PAID' },
-    { number: 'INV-2025-002', guest: 'Rohan Deshmukh', amount: 62160, tax: 6660, date: '10 Jun 2025', status: 'PAID' },
+    { number: 'INV-2025-001', guest: 'Dr. Anita Roy', amount: 44250, tax: 6750, date: '11 Jun 2025', status: 'PAID' },
+    { number: 'INV-2025-002', guest: 'Rohan Deshmukh', amount: 65490, tax: 9990, date: '10 Jun 2025', status: 'PAID' },
     { number: 'INV-2025-003', guest: 'Siddharth Sen', amount: 20160, tax: 2160, date: '09 Jun 2025', status: 'PAID' },
-    { number: 'INV-2025-004', guest: 'Kavita Iyer', amount: 117600, tax: 12600, date: '08 Jun 2025', status: 'PAID' },
+    { number: 'INV-2025-004', guest: 'Mrs. Kavita Iyer', amount: 123900, tax: 18900, date: '08 Jun 2025', status: 'PAID' },
   ]);
 
   const [expenses, setExpenses] = useState([
@@ -35,6 +32,38 @@ export default function HotelFinancePage() {
   const totalRevenue = 3450000;
   const totalExpenses = expenses.reduce((acc, e) => acc + e.amount, 0) + 450000;
   const netProfit = totalRevenue - totalExpenses;
+  const profitMarginPct = ((netProfit / totalRevenue) * 100).toFixed(1);
+
+  const handleExportCsv = () => {
+    const header = 'Type,Reference,Party/Category,Date,Tax INR,Amount INR,Status\n';
+    const invRows = invoices
+      .map((i) => `INVOICE,${i.number},"${i.guest}",${i.date},${i.tax},${i.amount},${i.status}`)
+      .join('\n');
+    const expRows = expenses
+      .map((e) => `EXPENSE,${e.id},"${e.category}: ${e.desc}",${e.date},0,-${e.amount},RECORDED`)
+      .join('\n');
+
+    downloadTextFile(
+      'hotel-os-financial-ledger.csv',
+      `${header}${invRows}\n${expRows}\n`,
+      'text/csv;charset=utf-8'
+    );
+    toast.success('Financial ledger exported as CSV!');
+  };
+
+  const handleDownloadInvoice = (inv: typeof invoices[0]) => {
+    const html = generateGstInvoiceHtml({
+      invoiceNumber: inv.number,
+      guestName: inv.guest,
+      hotelName: 'The Grand Palace Hotel & Spa',
+      totalAmount: inv.amount,
+      taxAmount: inv.tax,
+      date: inv.date,
+      status: inv.status,
+    });
+    downloadTextFile(`${inv.number}.html`, html, 'text/html;charset=utf-8');
+    toast.success(`Official GST Invoice ${inv.number} downloaded!`);
+  };
 
   const handleAddExpense = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +83,7 @@ export default function HotelFinancePage() {
     setShowAddExpense(false);
     setExpenseAmount('');
     setExpenseDesc('');
-    alert('Expense recorded into hotel ledger!');
+    toast.success('Expense recorded into hotel financial ledger!');
   };
 
   return (
@@ -75,13 +104,15 @@ export default function HotelFinancePage() {
 
         <div className="flex items-center gap-3">
           <button
-            onClick={() => alert('Exporting full financial ledger as CSV / Excel format...')}
+            type="button"
+            onClick={handleExportCsv}
             className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
           >
             <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
             <span>Export CSV</span>
           </button>
           <button
+            type="button"
             onClick={() => setShowAddExpense(true)}
             className="flex items-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-amber-700"
           >
@@ -116,7 +147,7 @@ export default function HotelFinancePage() {
           <div className="text-3xl font-extrabold text-emerald-600">
             ₹{netProfit.toLocaleString('en-IN')}
           </div>
-          <span className="text-xs text-emerald-700 font-semibold">83.8% Operating Margin</span>
+          <span className="text-xs text-emerald-700 font-semibold">{profitMarginPct}% Operating Margin</span>
         </div>
       </div>
 
@@ -153,53 +184,77 @@ export default function HotelFinancePage() {
         </div>
       </div>
 
-      {/* ─── Recent Invoices Table ─────────────────────────────────────────── */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <h2 className="text-base font-bold text-slate-900">Issued GST Invoices</h2>
-          <span className="text-xs text-slate-400">Showing last 4 transactions</span>
+      {/* ─── Recent Invoices & Recorded Expenses ────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h2 className="text-base font-bold text-slate-900">Issued GST Invoices</h2>
+            <span className="text-xs text-slate-400">Showing last {invoices.length} transactions</span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-100 text-slate-400 uppercase font-semibold">
+                  <th className="py-3 px-4">Invoice #</th>
+                  <th className="py-3 px-4">Customer Name</th>
+                  <th className="py-3 px-4">Date</th>
+                  <th className="py-3 px-4">GST Included</th>
+                  <th className="py-3 px-4">Total Amount</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4 text-right">Invoice</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-700">
+                {invoices.map((inv) => (
+                  <tr key={inv.number} className="hover:bg-slate-50/60">
+                    <td className="py-3 px-4 font-mono font-bold text-slate-900">{inv.number}</td>
+                    <td className="py-3 px-4 font-medium">{inv.guest}</td>
+                    <td className="py-3 px-4 text-slate-500">{inv.date}</td>
+                    <td className="py-3 px-4 font-mono">₹{inv.tax.toLocaleString('en-IN')}</td>
+                    <td className="py-3 px-4 font-mono font-extrabold text-slate-900">
+                      ₹{inv.amount.toLocaleString('en-IN')}
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+                        {inv.status}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadInvoice(inv)}
+                        className="inline-flex items-center gap-1 text-amber-600 font-bold hover:underline"
+                      >
+                        <Download className="h-3.5 w-3.5" /> Download
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="border-b border-slate-100 text-slate-400 uppercase font-semibold">
-                <th className="py-3 px-4">Invoice #</th>
-                <th className="py-3 px-4">Customer Name</th>
-                <th className="py-3 px-4">Date</th>
-                <th className="py-3 px-4">GST Included</th>
-                <th className="py-3 px-4">Total Amount</th>
-                <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4 text-right">PDF Invoice</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
-              {invoices.map((inv) => (
-                <tr key={inv.number} className="hover:bg-slate-50/60">
-                  <td className="py-3 px-4 font-mono font-bold text-slate-900">{inv.number}</td>
-                  <td className="py-3 px-4 font-medium">{inv.guest}</td>
-                  <td className="py-3 px-4 text-slate-500">{inv.date}</td>
-                  <td className="py-3 px-4 font-mono">₹{inv.tax.toLocaleString('en-IN')}</td>
-                  <td className="py-3 px-4 font-mono font-extrabold text-slate-900">
-                    ₹{inv.amount.toLocaleString('en-IN')}
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
-                      {inv.status}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <button
-                      onClick={() => alert(`Downloading official PDF for ${inv.number}...`)}
-                      className="inline-flex items-center gap-1 text-amber-600 font-bold hover:underline"
-                    >
-                      <Download className="h-3.5 w-3.5" /> PDF
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {/* Recorded Vendor Expenses */}
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h2 className="text-base font-bold text-slate-900">Recent Expenses</h2>
+            <span className="text-xs text-slate-400">{expenses.length} entries</span>
+          </div>
+          <div className="divide-y divide-slate-100 text-xs">
+            {expenses.map((exp) => (
+              <div key={exp.id} className="py-3 flex items-start justify-between gap-2">
+                <div>
+                  <span className="font-bold text-slate-900 block">{exp.category}</span>
+                  <span className="text-slate-500 text-[11px]">{exp.desc} • {exp.date}</span>
+                </div>
+                <span className="font-mono font-bold text-red-600 shrink-0">
+                  -₹{exp.amount.toLocaleString('en-IN')}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -209,7 +264,7 @@ export default function HotelFinancePage() {
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-200">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-bold text-base text-slate-900">Record Business Expense</h3>
-              <button onClick={() => setShowAddExpense(false)} className="text-slate-400 hover:text-slate-600">
+              <button type="button" onClick={() => setShowAddExpense(false)} className="text-slate-400 hover:text-slate-600">
                 ✕
               </button>
             </div>
@@ -246,6 +301,7 @@ export default function HotelFinancePage() {
                 <label className="text-xs font-semibold text-slate-600">Amount (₹)</label>
                 <input
                   type="number"
+                  min="1"
                   placeholder="e.g. 15000"
                   value={expenseAmount}
                   onChange={(e) => setExpenseAmount(e.target.value)}
@@ -276,4 +332,3 @@ export default function HotelFinancePage() {
     </div>
   );
 }
-

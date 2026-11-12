@@ -1,23 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
+import { toast } from 'sonner';
 import {
   UtensilsCrossed,
   Plus,
-  Clock,
   CheckCircle2,
-  AlertCircle,
-  IndianRupee,
-  Coffee,
   Soup,
-  Pizza,
-  Sparkles,
-  BedDouble,
-  User,
-  Send,
-  Printer,
-  ChevronRight,
 } from 'lucide-react';
 
 interface OrderItem {
@@ -116,6 +105,7 @@ export default function HotelDiningPOSPage() {
     setOrders(
       orders.map((o) => (o.id === orderId ? { ...o, status: next } : o))
     );
+    toast.success(`Kitchen ticket updated to ${next.replace(/_/g, ' ')}`);
   };
 
   // Submit New Order
@@ -142,7 +132,7 @@ export default function HotelDiningPOSPage() {
     setOrders([newKot, ...orders]);
     setShowOrderModal(false);
     setOrderNotes('');
-    alert(`Order #${newKot.ticketNo} placed for Room #${selectedRoom}! Billed to room folio: ₹${total}.`);
+    toast.success(`Order ${newKot.ticketNo} sent to Kitchen for Room #${selectedRoom} (₹${total})`);
   };
 
   return (
@@ -420,3 +410,4 @@ export default function HotelDiningPOSPage() {
     </div>
   );
 }
+

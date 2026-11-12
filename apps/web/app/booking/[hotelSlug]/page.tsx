@@ -3,29 +3,35 @@
 import React, { useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import {
   ShieldCheck,
   Calendar,
   Users,
   CreditCard,
   QrCode,
-  CheckCircle,
   Building,
   Lock,
   ChevronRight,
-  Info,
 } from 'lucide-react';
+import { calculateGSTRate } from '@hotel-os/shared';
 import { api } from '../../../src/lib/api';
+import { findDemoHotelBySlug, saveBookingRecord } from '../../../src/lib/demo-data';
 
 function BookingCheckoutContent() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const hotelSlug = params?.hotelSlug as string;
+  const hotelSlug = (params?.hotelSlug as string) || 'the-grand-palace-hotel';
 
-  const [checkIn, setCheckIn] = useState('2025-06-15');
-  const [checkOut, setCheckOut] = useState('2025-06-18');
-  const [guests, setGuests] = useState(2);
+  const hotel = findDemoHotelBySlug(hotelSlug);
+  const categoryId = searchParams.get('category');
+  const selectedCategory =
+    hotel.roomCategories.find((c) => c.id === categoryId) || hotel.roomCategories[0];
+
+  const [checkIn, setCheckIn] = useState(searchParams.get('checkIn') || '2025-06-15');
+  const [checkOut, setCheckOut] = useState(searchParams.get('checkOut') || '2025-06-18');
+  const [guests, setGuests] = useState(Number(searchParams.get('guests')) || 2);
   const [firstName, setFirstName] = useState('John');
   const [lastName, setLastName] = useState('Doe');
   const [email, setEmail] = useState('customer@example.com');
@@ -34,29 +40,61 @@ function BookingCheckoutContent() {
   const [paymentMethod, setPaymentMethod] = useState<'CARD' | 'UPI' | 'CASH'>('UPI');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Compute stay duration and rates
+  // Compute stay duration and statutory Indian GST slab dynamically
   const inDate = new Date(checkIn);
   const outDate = new Date(checkOut);
-  const nights = Math.max(
-    1,
-    Math.ceil((outDate.getTime() - inDate.getTime()) / (1000 * 60 * 60 * 24))
-  );
+  const isDateRangeValid = outDate > inDate;
+  const nights = isDateRangeValid
+    ? Math.max(1, Math.ceil((outDate.getTime() - inDate.getTime()) / (1000 * 60 * 60 * 24)))
+    : 1;
 
-  const nightlyRate = 12500;
+  const nightlyRate = selectedCategory.basePrice;
   const subtotal = nightlyRate * nights;
-  const gstPercent = 12; // Indian GST slab for luxury room
+  const gstPercent = calculateGSTRate(nightlyRate);
   const taxAmount = Math.round((subtotal * gstPercent) / 100);
   const totalAmount = subtotal + taxAmount;
 
+  const persistDemoAndNavigate = (bookingRef: string) => {
+    saveBookingRecord({
+      bookingRef,
+      hotelSlug: hotel.slug,
+      hotelName: hotel.name,
+      hotelAddress: hotel.address,
+      city: hotel.city,
+      categoryName: selectedCategory.name,
+      guestName: `${firstName} ${lastName}`.trim(),
+      guestEmail: email,
+      guestPhone: phone,
+      guests,
+      checkIn,
+      checkOut,
+      nights,
+      nightlyRate,
+      gstPercent,
+      taxAmount,
+      totalAmount,
+      paymentMethod,
+      specialRequests,
+      status: 'CONFIRMED',
+      createdAt: new Date().toISOString(),
+    });
+    toast.success(`Reservation ${bookingRef} confirmed!`);
+    router.push(`/booking/confirmation/${bookingRef}`);
+  };
+
   const handleSubmitBooking = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isDateRangeValid) {
+      toast.error('Check-out date must be after check-in date');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      // 1. Create booking on backend
       const bookingData = {
-        hotelId: 'demo-hotel-id',
-        roomId: 'demo-room-id',
+        hotelId: hotel.id,
+        roomId: selectedCategory.id,
         checkInDate: `${checkIn}T14:00:00Z`,
         checkOutDate: `${checkOut}T11:00:00Z`,
         guests,
@@ -71,9 +109,9 @@ function BookingCheckoutContent() {
       };
 
       const res = await api.post<any>('/bookings', bookingData);
-      const bookingRef = res?.bookingRef || `HOS-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      const bookingRef =
+        res?.bookingRef || `HOS-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
-      // 2. Complete payment simulation
       if (res?.id) {
         await api.post(`/bookings/${res.id}/pay`, {
           method: paymentMethod,
@@ -81,11 +119,10 @@ function BookingCheckoutContent() {
         });
       }
 
-      router.push(`/booking/confirmation/${bookingRef}`);
+      persistDemoAndNavigate(bookingRef);
     } catch {
-      // Seamless demo fallback
       const fallbackRef = `HOS-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-      router.push(`/booking/confirmation/${fallbackRef}`);
+      persistDemoAndNavigate(fallbackRef);
     } finally {
       setIsSubmitting(false);
     }
@@ -97,7 +134,7 @@ function BookingCheckoutContent() {
       <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-6">
         <Link href="/" className="hover:text-amber-600">Home</Link>
         <ChevronRight className="h-3 w-3" />
-        <Link href={`/hotels/${hotelSlug}`} className="hover:text-amber-600">Hotel Details</Link>
+        <Link href={`/hotels/${hotel.slug}`} className="hover:text-amber-600">{hotel.name}</Link>
         <ChevronRight className="h-3 w-3" />
         <span className="text-slate-600 font-medium">Checkout & Reservation</span>
       </div>
@@ -148,6 +185,12 @@ function BookingCheckoutContent() {
                   </select>
                 </div>
               </div>
+
+              {!isDateRangeValid && (
+                <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-xs font-semibold text-red-700">
+                  Check-out date must be later than check-in date.
+                </div>
+              )}
             </div>
 
             {/* Step 2: Guest Profile */}
@@ -257,7 +300,7 @@ function BookingCheckoutContent() {
             {/* Submit CTA */}
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !isDateRangeValid}
               className="w-full flex items-center justify-center gap-2 rounded-xl bg-amber-600 py-4 text-sm font-bold text-white shadow-lg hover:bg-amber-700 transition-all hover:scale-[1.01] disabled:opacity-50"
             >
               {isSubmitting ? (
@@ -280,23 +323,23 @@ function BookingCheckoutContent() {
                 Reservation Summary
               </span>
               <h3 className="text-lg font-bold text-slate-900 mt-1">
-                The Grand Palace Hotel & Spa
+                {hotel.name}
               </h3>
-              <p className="text-xs text-slate-500">Apollo Bunder, Colaba, Mumbai</p>
+              <p className="text-xs text-slate-500">{hotel.address}</p>
             </div>
 
             <div className="rounded-xl bg-slate-50 p-4 border border-slate-100 space-y-2 text-xs text-slate-700">
               <div className="flex justify-between font-medium">
                 <span>Room Type:</span>
-                <span className="font-bold text-slate-900">Deluxe Heritage Room</span>
+                <span className="font-bold text-slate-900">{selectedCategory.name}</span>
               </div>
               <div className="flex justify-between">
                 <span>Check-in:</span>
-                <span>{checkIn} (14:00 hrs)</span>
+                <span>{checkIn} ({hotel.checkInTime} hrs)</span>
               </div>
               <div className="flex justify-between">
                 <span>Check-out:</span>
-                <span>{checkOut} (11:00 hrs)</span>
+                <span>{checkOut} ({hotel.checkOutTime} hrs)</span>
               </div>
               <div className="flex justify-between font-semibold text-amber-800">
                 <span>Length of Stay:</span>
@@ -310,12 +353,12 @@ function BookingCheckoutContent() {
                 <span className="font-medium text-slate-900">₹{subtotal.toLocaleString('en-IN')}</span>
               </div>
               <div className="flex justify-between">
-                <span>GST Tax (12% Government Slab):</span>
+                <span>GST Tax ({gstPercent}% Government Slab):</span>
                 <span className="font-medium text-slate-900">₹{taxAmount.toLocaleString('en-IN')}</span>
               </div>
               <div className="flex justify-between text-emerald-600">
                 <span>Loyalty Welcome Points:</span>
-                <span className="font-semibold">+100 Points</span>
+                <span className="font-semibold">+{Math.round((subtotal / 100) * 10 * 1.15)} Points</span>
               </div>
               <div className="flex items-center justify-between border-t border-slate-200 pt-3 text-sm font-extrabold text-slate-900">
                 <span>Total Amount Due:</span>
@@ -325,7 +368,7 @@ function BookingCheckoutContent() {
 
             <div className="rounded-xl bg-emerald-50 border border-emerald-200/50 p-3 flex items-start gap-2 text-xs text-emerald-800">
               <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-600 mt-0.5" />
-              <span>Free cancellation up to 24 hours prior to check-in. Instant automated refund.</span>
+              <span>Free cancellation up to {hotel.cancellationPolicyHours} hours prior to check-in. Instant automated refund.</span>
             </div>
           </div>
         </aside>
@@ -341,5 +384,3 @@ export default function BookingCheckoutPage() {
     </React.Suspense>
   );
 }
-
-

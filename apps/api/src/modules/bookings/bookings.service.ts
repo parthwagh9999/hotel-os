@@ -3,10 +3,10 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
-import { UpdateBookingDto } from './dto/update-booking.dto';
 import { calculateGSTRate } from '@hotel-os/shared';
 
 @Injectable()
@@ -148,6 +148,21 @@ export class BookingsService {
     return this.findById(booking.id);
   }
 
+  private async assertHotelStaffOrAdmin(hotelId: string, user?: { id: string; role: string }) {
+    if (!user) {
+      throw new ForbiddenException('Authentication required');
+    }
+    if (user.role === 'SUPER_ADMIN' || user.role === 'PLATFORM_ADMIN') {
+      return;
+    }
+    const membership = await this.prisma.hotelMember.findFirst({
+      where: { hotelId, userId: user.id, isActive: true },
+    });
+    if (!membership) {
+      throw new ForbiddenException('Access denied: You are not authorized staff for this hotel');
+    }
+  }
+
   async confirmPayment(bookingId: string, paymentMethod: string = 'CARD', transactionId?: string) {
     const booking = await this.prisma.booking.findUnique({
       where: { id: bookingId },
@@ -156,6 +171,14 @@ export class BookingsService {
 
     if (!booking) {
       throw new NotFoundException('Booking not found');
+    }
+
+    if (booking.status === 'CANCELLED' || booking.status === 'CHECKED_OUT') {
+      throw new BadRequestException(`Cannot pay for a ${booking.status.toLowerCase()} reservation`);
+    }
+
+    if (booking.status === 'CONFIRMED' || booking.status === 'CHECKED_IN') {
+      return booking;
     }
 
     return this.prisma.$transaction(async (tx) => {
@@ -191,7 +214,7 @@ export class BookingsService {
     });
   }
 
-  async checkIn(bookingId: string, staffName: string) {
+  async checkIn(bookingId: string, actor: { id: string; role: string; firstName?: string } | string) {
     const booking = await this.prisma.booking.findUnique({
       where: { id: bookingId },
       include: { bookingRooms: true },
@@ -199,6 +222,11 @@ export class BookingsService {
 
     if (!booking) {
       throw new NotFoundException('Booking not found');
+    }
+
+    const staffName = typeof actor === 'string' ? actor : actor.firstName || 'Receptionist';
+    if (typeof actor !== 'string') {
+      await this.assertHotelStaffOrAdmin(booking.hotelId, actor);
     }
 
     if (booking.status === 'CHECKED_IN') {
@@ -227,7 +255,7 @@ export class BookingsService {
     });
   }
 
-  async checkOut(bookingId: string, staffName: string) {
+  async checkOut(bookingId: string, actor: { id: string; role: string; firstName?: string } | string) {
     const booking = await this.prisma.booking.findUnique({
       where: { id: bookingId },
       include: { bookingRooms: { include: { room: true } } },
@@ -235,6 +263,11 @@ export class BookingsService {
 
     if (!booking) {
       throw new NotFoundException('Booking not found');
+    }
+
+    const staffName = typeof actor === 'string' ? actor : actor.firstName || 'Receptionist';
+    if (typeof actor !== 'string') {
+      await this.assertHotelStaffOrAdmin(booking.hotelId, actor);
     }
 
     return this.prisma.$transaction(async (tx) => {
@@ -314,7 +347,7 @@ export class BookingsService {
     });
   }
 
-  async cancel(bookingId: string, reason?: string) {
+  async cancel(bookingId: string, actor?: { id: string; role: string }, reason?: string) {
     const booking = await this.prisma.booking.findUnique({
       where: { id: bookingId },
       include: { bookingRooms: true },
@@ -322,6 +355,13 @@ export class BookingsService {
 
     if (!booking) {
       throw new NotFoundException('Booking not found');
+    }
+
+    if (actor) {
+      const isOwner = booking.userId === actor.id;
+      if (!isOwner) {
+        await this.assertHotelStaffOrAdmin(booking.hotelId, actor);
+      }
     }
 
     if (booking.status === 'CHECKED_IN' || booking.status === 'CHECKED_OUT') {

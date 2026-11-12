@@ -1,18 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
+import { toast } from 'sonner';
 import {
-  BrainCircuit,
-  TrendingUp,
-  AlertTriangle,
   Sparkles,
   CheckCircle2,
-  Calendar,
   IndianRupee,
   ShieldAlert,
   ArrowUpRight,
   ArrowDownRight,
-  Info,
 } from 'lucide-react';
 
 export default function AiInsightsPage() {
@@ -88,11 +84,19 @@ export default function AiInsightsPage() {
     { date: '21 Jun', day: 'Sat', occ: 95, rooms: 38, demand: 'PEAK' },
   ];
 
+  const [sentDepositRefs, setSentDepositRefs] = useState<string[]>([]);
+
   const handleApplyPricing = (id: string) => {
+    const rec = pricingRecs.find((r) => r.id === id);
     setPricingRecs(
       pricingRecs.map((p) => (p.id === id ? { ...p, applied: true } : p))
     );
-    alert('Dynamic price recommendation applied to live booking engine!');
+    toast.success(`Dynamic rate for ${rec?.category || 'category'} (₹${rec?.suggestedPrice.toLocaleString('en-IN')}) applied live!`);
+  };
+
+  const handleSendDepositRequest = (bookingRef: string, guest: string) => {
+    setSentDepositRefs([...sentDepositRefs, bookingRef]);
+    toast.success(`Automated WhatsApp 25% deposit confirmation dispatched to ${guest} (${bookingRef})`);
   };
 
   return (
@@ -285,10 +289,16 @@ export default function AiInsightsPage() {
               </div>
 
               <button
-                onClick={() => alert(`Automated WhatsApp confirmation dispatched to ${c.guest}!`)}
-                className="rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold text-white shadow hover:bg-slate-800 shrink-0"
+                type="button"
+                disabled={sentDepositRefs.includes(c.bookingRef)}
+                onClick={() => handleSendDepositRequest(c.bookingRef, c.guest)}
+                className={`rounded-xl px-4 py-2.5 text-xs font-bold shadow shrink-0 transition-colors ${
+                  sentDepositRefs.includes(c.bookingRef)
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : 'bg-slate-900 text-white hover:bg-slate-800'
+                }`}
               >
-                Send Deposit Request
+                {sentDepositRefs.includes(c.bookingRef) ? '✓ Request Dispatched' : 'Send Deposit Request'}
               </button>
             </div>
           ))}

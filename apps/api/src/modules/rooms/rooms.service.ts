@@ -64,7 +64,28 @@ export class RoomsService {
     });
   }
 
+  private async findCategoryOrFail(id: string, hotelId: string) {
+    const category = await this.prisma.roomCategory.findFirst({
+      where: { id, hotelId },
+    });
+    if (!category) {
+      throw new NotFoundException('Room category not found in this hotel');
+    }
+    return category;
+  }
+
+  private async findRoomOrFail(id: string, hotelId: string) {
+    const room = await this.prisma.room.findFirst({
+      where: { id, hotelId },
+    });
+    if (!room) {
+      throw new NotFoundException('Room not found in this hotel');
+    }
+    return room;
+  }
+
   async updateCategory(id: string, hotelId: string, dto: Partial<CreateCategoryDto>) {
+    await this.findCategoryOrFail(id, hotelId);
     return this.prisma.roomCategory.update({
       where: { id },
       data: dto as any,
@@ -72,6 +93,7 @@ export class RoomsService {
   }
 
   async deleteCategory(id: string, hotelId: string) {
+    await this.findCategoryOrFail(id, hotelId);
     return this.prisma.roomCategory.delete({
       where: { id },
     });
@@ -153,6 +175,7 @@ export class RoomsService {
   }
 
   async updateRoom(id: string, hotelId: string, dto: UpdateRoomDto) {
+    await this.findRoomOrFail(id, hotelId);
     return this.prisma.room.update({
       where: { id },
       data: dto as any,
@@ -160,6 +183,7 @@ export class RoomsService {
   }
 
   async updateStatus(id: string, hotelId: string, status: string) {
+    await this.findRoomOrFail(id, hotelId);
     const room = await this.prisma.room.update({
       where: { id },
       data: { status: status as any },

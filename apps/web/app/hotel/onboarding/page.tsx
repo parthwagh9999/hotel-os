@@ -2,17 +2,11 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { toast } from 'sonner';
 import {
-  Building2,
-  MapPin,
-  CheckCircle2,
   ArrowRight,
   ArrowLeft,
   ShieldCheck,
-  Sparkles,
-  CreditCard,
-  FileCheck,
 } from 'lucide-react';
 import { api } from '../../../src/lib/api';
 
@@ -65,10 +59,10 @@ export default function HotelOnboardingWizard() {
         totalFloors: Number(totalFloors),
       });
 
-      alert('Hotel submitted successfully! Verification status set to UNDER_REVIEW.');
+      toast.success('Hotel submitted! Verification status set to UNDER_REVIEW.');
       router.push('/hotel/dashboard');
     } catch {
-      alert('Hotel registered! Welcome to your Hotel OS dashboard.');
+      toast.success('Hotel registered in sandbox! Welcome to your Hotel OS dashboard.');
       router.push('/hotel/dashboard');
     } finally {
       setIsSubmitting(false);

@@ -1,16 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
+import { toast } from 'sonner';
 import {
   UserCheck,
   UserX,
   Plus,
   Search,
   CheckCircle2,
-  Clock,
   Printer,
-  Sparkles,
-  ShieldCheck,
   Building,
 } from 'lucide-react';
 import { api } from '../../../src/lib/api';
@@ -27,24 +25,17 @@ export default function FrontDeskPMSPage() {
     { id: 'b5', ref: 'HOS-1M8B4V', guest: 'Siddharth Sen', phone: '+91 98450 33445', room: '105', category: 'Standard Room', status: 'CHECKED_IN', balance: 0 },
   ]);
 
+  const [searchQuery, setSearchQuery] = useState('');
   const [showWalkInModal, setShowWalkInModal] = useState(false);
   const [walkInName, setWalkInName] = useState('');
   const [walkInRoom, setWalkInRoom] = useState('102');
   const [walkInNights, setWalkInNights] = useState('1');
 
-  // Handle 1-click Check-in
   const handleCheckIn = async (bookingId: string) => {
-    try {
-      await api.post(`/bookings/${bookingId}/check-in`);
-    } catch {
-      // Seamless client simulation
-    }
-
     const item = arrivals.find((a) => a.id === bookingId);
     if (item) {
       setArrivals(arrivals.filter((a) => a.id !== bookingId));
       setDepartures([
-        ...departures,
         {
           id: item.id,
           ref: item.ref,
@@ -55,31 +46,40 @@ export default function FrontDeskPMSPage() {
           status: 'CHECKED_IN',
           balance: 0,
         },
+        ...departures,
       ]);
+      toast.success(`${item.guest} checked in to Room #${item.room}!`);
+    }
+
+    try {
+      await api.post(`/bookings/${bookingId}/check-in`);
+    } catch {
+      // Seamless client simulation
     }
   };
 
-  // Handle 1-click Check-out
   const handleCheckOut = async (bookingId: string) => {
+    const item = departures.find((d) => d.id === bookingId);
+    setDepartures(departures.filter((d) => d.id !== bookingId));
+    toast.success(
+      `${item?.guest || 'Guest'} checked out! Room #${item?.room || ''} queued for Housekeeping sanitization.`
+    );
+
     try {
       await api.post(`/bookings/${bookingId}/check-out`);
     } catch {
       // Seamless client simulation
     }
-
-    setDepartures(departures.filter((d) => d.id !== bookingId));
-    alert('Guest checked out successfully! Room marked as CLEANING_REQUIRED and housekeeping notified.');
   };
 
-  // Handle Walk-in submission
   const handleWalkInSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!walkInName) return;
+    if (!walkInName.trim()) return;
 
     const newBooking = {
       id: `walkin-${Date.now()}`,
       ref: `HOS-W${Math.floor(1000 + Math.random() * 9000)}`,
-      guest: walkInName,
+      guest: walkInName.trim(),
       phone: '+91 98000 00000',
       room: walkInRoom,
       category: 'Deluxe Heritage',
@@ -90,8 +90,24 @@ export default function FrontDeskPMSPage() {
     setDepartures([newBooking, ...departures]);
     setShowWalkInModal(false);
     setWalkInName('');
-    alert(`Walk-in guest ${walkInName} checked in to Room #${walkInRoom}!`);
+    toast.success(`Walk-in guest ${newBooking.guest} checked in to Room #${walkInRoom}!`);
   };
+
+  const q = searchQuery.trim().toLowerCase();
+  const filteredArrivals = arrivals.filter(
+    (a) =>
+      !q ||
+      a.guest.toLowerCase().includes(q) ||
+      a.ref.toLowerCase().includes(q) ||
+      a.room.includes(q)
+  );
+  const filteredDepartures = departures.filter(
+    (d) =>
+      !q ||
+      d.guest.toLowerCase().includes(q) ||
+      d.ref.toLowerCase().includes(q) ||
+      d.room.includes(q)
+  );
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -109,13 +125,26 @@ export default function FrontDeskPMSPage() {
           </p>
         </div>
 
-        <button
-          onClick={() => setShowWalkInModal(true)}
-          className="flex items-center gap-2 rounded-xl bg-amber-600 px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-amber-700 transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          <span>New Walk-in Guest</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative">
+            <Search className="h-3.5 w-3.5 text-slate-400 absolute left-3 top-2.5" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search guest, PNR, room #"
+              className="rounded-xl border border-slate-200 bg-white pl-8 pr-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-amber-600"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowWalkInModal(true)}
+            className="flex items-center gap-2 rounded-xl bg-amber-600 px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-amber-700 transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            <span>New Walk-in Guest</span>
+          </button>
+        </div>
       </div>
 
       {/* ─── Status Overview Badges ────────────────────────────────────────── */}
@@ -159,19 +188,19 @@ export default function FrontDeskPMSPage() {
             <div className="flex items-center gap-2">
               <UserCheck className="h-5 w-5 text-amber-600" />
               <h2 className="font-bold text-sm text-slate-900">
-                Today's Expected Arrivals ({arrivals.length})
+                Today's Expected Arrivals ({filteredArrivals.length})
               </h2>
             </div>
             <span className="text-xs font-semibold text-amber-800">Check-In From 14:00</span>
           </div>
 
           <div className="p-4 divide-y divide-slate-100">
-            {arrivals.length === 0 ? (
+            {filteredArrivals.length === 0 ? (
               <div className="py-12 text-center text-xs text-slate-400">
-                All scheduled arrivals have checked in!
+                All matching scheduled arrivals have checked in!
               </div>
             ) : (
-              arrivals.map((a) => (
+              filteredArrivals.map((a) => (
                 <div key={a.id} className="py-4 flex items-center justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-2">
@@ -187,6 +216,7 @@ export default function FrontDeskPMSPage() {
                   </div>
 
                   <button
+                    type="button"
                     onClick={() => handleCheckIn(a.id)}
                     className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 transition-colors shrink-0"
                   >
@@ -205,19 +235,19 @@ export default function FrontDeskPMSPage() {
             <div className="flex items-center gap-2">
               <UserX className="h-5 w-5 text-slate-700" />
               <h2 className="font-bold text-sm text-slate-900">
-                In-House & Departures ({departures.length})
+                In-House & Departures ({filteredDepartures.length})
               </h2>
             </div>
             <span className="text-xs font-semibold text-slate-500">Check-Out By 11:00</span>
           </div>
 
           <div className="p-4 divide-y divide-slate-100">
-            {departures.length === 0 ? (
+            {filteredDepartures.length === 0 ? (
               <div className="py-12 text-center text-xs text-slate-400">
-                No active in-house guests at this time.
+                No matching active in-house guests at this time.
               </div>
             ) : (
-              departures.map((d) => (
+              filteredDepartures.map((d) => (
                 <div key={d.id} className="py-4 flex items-center justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-2">
@@ -233,6 +263,7 @@ export default function FrontDeskPMSPage() {
                   </div>
 
                   <button
+                    type="button"
                     onClick={() => handleCheckOut(d.id)}
                     className="flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-slate-800 transition-colors shrink-0"
                   >
@@ -253,6 +284,7 @@ export default function FrontDeskPMSPage() {
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-bold text-base text-slate-900">Fast Reception Walk-in Booking</h3>
               <button
+                type="button"
                 onClick={() => setShowWalkInModal(false)}
                 className="text-slate-400 hover:text-slate-600"
               >
@@ -327,4 +359,3 @@ export default function FrontDeskPMSPage() {
     </div>
   );
 }
-

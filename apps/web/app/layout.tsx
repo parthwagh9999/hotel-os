@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Toaster } from 'sonner';
 import './globals.css';
 import { Navbar } from '../src/components/layout/navbar';
 import { Footer } from '../src/components/layout/footer';
@@ -20,8 +21,8 @@ export default function RootLayout({
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />
+        <Toaster richColors position="top-right" closeButton />
       </body>
     </html>
   );
 }
-

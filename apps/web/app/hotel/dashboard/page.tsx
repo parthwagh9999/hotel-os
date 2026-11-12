@@ -1,39 +1,74 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import {
   BedDouble,
   UserCheck,
-  UserX,
   IndianRupee,
   TrendingUp,
-  Sparkles,
   AlertCircle,
-  Clock,
-  ArrowUpRight,
-  ArrowRight,
-  CheckCircle2,
-  Calendar,
+  Info,
 } from 'lucide-react';
-import { api } from '../../../src/lib/api';
+
+type DateRangeKey = 'TODAY' | 'LAST_7' | 'THIS_MONTH';
+
+const PERIOD_METRICS: Record<
+  DateRangeKey,
+  {
+    label: string;
+    occupancyRate: number;
+    occupiedRooms: number;
+    availableRooms: number;
+    arrivals: number;
+    departures: number;
+    revenue: number;
+    monthlyRevenue: number;
+    adr: number;
+    revpar: number;
+  }
+> = {
+  TODAY: {
+    label: "Today's",
+    occupancyRate: 60.0,
+    occupiedRooms: 24,
+    availableRooms: 12,
+    arrivals: 8,
+    departures: 5,
+    revenue: 284000,
+    monthlyRevenue: 3450000,
+    adr: 11833,
+    revpar: 7100,
+  },
+  LAST_7: {
+    label: 'Last 7 Days',
+    occupancyRate: 74.5,
+    occupiedRooms: 30,
+    availableRooms: 10,
+    arrivals: 52,
+    departures: 47,
+    revenue: 2140000,
+    monthlyRevenue: 3450000,
+    adr: 12450,
+    revpar: 9275,
+  },
+  THIS_MONTH: {
+    label: 'This Month',
+    occupancyRate: 71.2,
+    occupiedRooms: 28,
+    availableRooms: 12,
+    arrivals: 194,
+    departures: 181,
+    revenue: 3450000,
+    monthlyRevenue: 3450000,
+    adr: 12110,
+    revpar: 8622,
+  },
+};
 
 export default function HotelDashboardPage() {
-  const [stats, setStats] = useState({
-    totalRooms: 40,
-    availableRooms: 12,
-    occupiedRooms: 24,
-    cleaningRequiredRooms: 3,
-    maintenanceRooms: 1,
-    occupancyRate: 60.0,
-    todayArrivals: 8,
-    todayDepartures: 5,
-    todayRevenue: 284000,
-    monthlyRevenue: 3450000,
-    averageDailyRate: 11833, // ADR
-    revenuePerAvailableRoom: 7100, // RevPAR
-    pendingHousekeepingTasks: 4,
-  });
+  const [range, setRange] = useState<DateRangeKey>('TODAY');
+  const stats = PERIOD_METRICS[range];
 
   const recentBookings = [
     { ref: 'HOS-7K2X9P', guest: 'Dr. Anita Roy', room: '204', type: 'Deluxe Heritage', status: 'CONFIRMED', amount: 37500 },
@@ -57,11 +92,33 @@ export default function HotelDashboardPage() {
             Good Afternoon, Hotel Operations Team
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Here is your live hotel performance, room occupancy, and front-desk flow for today.
+            Live hotel performance, room occupancy, and front-desk flow. Click any KPI card to drill down.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Date Filter Selector */}
+          <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 text-xs font-semibold shadow-sm">
+            {(
+              [
+                { id: 'TODAY', label: 'Today' },
+                { id: 'LAST_7', label: 'Last 7 Days' },
+                { id: 'THIS_MONTH', label: 'This Month' },
+              ] as const
+            ).map((opt) => (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => setRange(opt.id)}
+                className={`px-3 py-1.5 rounded-lg transition-colors ${
+                  range === opt.id ? 'bg-amber-600 text-white' : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
           <Link
             href="/hotel/front-desk"
             className="flex items-center gap-2 rounded-xl bg-amber-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-amber-700 transition-colors"
@@ -69,20 +126,16 @@ export default function HotelDashboardPage() {
             <UserCheck className="h-4 w-4" />
             <span>Front Desk PMS Mode</span>
           </Link>
-          <Link
-            href="/hotel/rooms"
-            className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50 transition-colors"
-          >
-            <BedDouble className="h-4 w-4 text-slate-500" />
-            <span>Manage Inventory</span>
-          </Link>
         </div>
       </div>
 
-      {/* ─── 5 Critical Questions Metric Cards ─────────────────────────────── */}
+      {/* ─── 5 Critical Questions Metric Cards (All Clickable) ─────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Q1 & Q2: Occupancy */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-2">
+        {/* Q1 & Q2: Occupancy -> Rooms */}
+        <Link
+          href="/hotel/rooms"
+          className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-2 hover:border-amber-400 hover:shadow-md transition-all"
+        >
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500">Live Occupancy</span>
             <div className="p-2 rounded-xl bg-amber-50 text-amber-700">
@@ -96,60 +149,77 @@ export default function HotelDashboardPage() {
             <span>{stats.occupiedRooms} Occupied</span>
             <span className="text-emerald-600 font-semibold">{stats.availableRooms} Available</span>
           </div>
-        </div>
+        </Link>
 
-        {/* Q3: Today's Arrivals & Departures */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-2">
+        {/* Q3: Arrivals & Departures -> Front Desk */}
+        <Link
+          href="/hotel/front-desk"
+          className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-2 hover:border-blue-400 hover:shadow-md transition-all"
+        >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500">Front Desk Today</span>
+            <span className="text-xs font-bold text-slate-500">Front Desk Flow</span>
             <div className="p-2 rounded-xl bg-blue-50 text-blue-700">
               <UserCheck className="h-4 w-4" />
             </div>
           </div>
           <div className="text-2xl font-extrabold text-slate-900">
-            {stats.todayArrivals} Arrivals
+            {stats.arrivals} Arrivals
           </div>
           <div className="flex items-center justify-between text-xs text-slate-500 pt-1 border-t border-slate-100">
-            <span>Expected today: {stats.todayArrivals}</span>
-            <span className="text-slate-600 font-semibold">{stats.todayDepartures} Departures</span>
+            <span>{stats.label}</span>
+            <span className="text-slate-600 font-semibold">{stats.departures} Departures</span>
           </div>
-        </div>
+        </Link>
 
-        {/* Q4: Today's Revenue */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-2">
+        {/* Q4: Revenue -> Finance */}
+        <Link
+          href="/hotel/finance"
+          className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-2 hover:border-emerald-400 hover:shadow-md transition-all"
+        >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500">Today's Revenue</span>
+            <span className="text-xs font-bold text-slate-500">{stats.label} Revenue</span>
             <div className="p-2 rounded-xl bg-emerald-50 text-emerald-700">
               <IndianRupee className="h-4 w-4" />
             </div>
           </div>
           <div className="text-2xl font-extrabold text-slate-900">
-            ₹{stats.todayRevenue.toLocaleString('en-IN')}
+            ₹{stats.revenue.toLocaleString('en-IN')}
           </div>
           <div className="flex items-center justify-between text-xs text-slate-500 pt-1 border-t border-slate-100">
             <span>MTD: ₹{(stats.monthlyRevenue / 100000).toFixed(1)}L</span>
             <span className="text-emerald-600 font-semibold">+14% vs last mo</span>
           </div>
-        </div>
+        </Link>
 
-        {/* Industry Metrics: ADR & RevPAR */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-2">
+        {/* Industry Metrics: ADR & RevPAR -> AI Insights */}
+        <Link
+          href="/hotel/ai-insights"
+          className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-2 hover:border-purple-400 hover:shadow-md transition-all"
+        >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500">ADR & RevPAR</span>
+            <span className="text-xs font-bold text-slate-500 flex items-center gap-1" title="Average Daily Rate = Room Revenue / Occupied Rooms; RevPAR = Room Revenue / Total Rooms">
+              ADR & RevPAR <Info className="h-3 w-3 text-slate-400" />
+            </span>
             <div className="p-2 rounded-xl bg-purple-50 text-purple-700">
               <TrendingUp className="h-4 w-4" />
             </div>
           </div>
           <div className="text-2xl font-extrabold text-slate-900">
-            ₹{stats.averageDailyRate.toLocaleString('en-IN')}
+            ₹{stats.adr.toLocaleString('en-IN')}
           </div>
           <div className="flex items-center justify-between text-xs text-slate-500 pt-1 border-t border-slate-100">
-            <span title="Average Daily Rate">ADR: ₹{stats.averageDailyRate}</span>
-            <span title="Revenue per available room" className="font-semibold text-purple-700">
-              RevPAR: ₹{stats.revenuePerAvailableRoom}
+            <span>Avg Price/Room</span>
+            <span className="font-semibold text-purple-700">
+              RevPAR: ₹{stats.revpar.toLocaleString('en-IN')}
             </span>
           </div>
-        </div>
+        </Link>
+      </div>
+
+      {/* Simple Glossary Bar for Hoteliers New to KPIs */}
+      <div className="rounded-2xl bg-slate-100/80 border border-slate-200/70 px-4 py-3 text-[11px] text-slate-600 flex flex-wrap gap-x-6 gap-y-1">
+        <span><strong>ADR (Average Daily Rate):</strong> Average rental income earned per occupied room.</span>
+        <span><strong>RevPAR (Revenue Per Available Room):</strong> Occupancy % × ADR — measures overall pricing & fill efficiency.</span>
       </div>
 
       {/* ─── Q5: What Needs My Attention Today? ────────────────────────────── */}
@@ -262,4 +332,3 @@ export default function HotelDashboardPage() {
     </div>
   );
 }
-

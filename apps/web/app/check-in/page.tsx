@@ -2,17 +2,10 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import {
   ShieldCheck,
-  Search,
-  CheckCircle2,
-  QrCode,
   Sparkles,
   ArrowRight,
-  FileCheck,
-  Building2,
-  Clock,
   KeyRound,
 } from 'lucide-react';
 
@@ -131,3 +124,4 @@ export default function CheckInLookupPage() {
     </div>
   );
 }
+

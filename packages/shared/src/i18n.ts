@@ -128,3 +128,4 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
     contactlessCheckIn: 'मोबाईल सेल्फ चेक-इन',
   },
 };
+

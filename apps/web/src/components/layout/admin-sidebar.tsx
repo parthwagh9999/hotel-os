@@ -8,9 +8,7 @@ import {
   Building2,
   Users,
   CreditCard,
-  FileText,
   Activity,
-  Sliders,
 } from 'lucide-react';
 
 export function AdminSidebar() {
@@ -24,7 +22,7 @@ export function AdminSidebar() {
   ];
 
   return (
-    <aside className="w-64 shrink-0 border-r border-slate-200 bg-slate-900 text-white min-h-[calc(100vh-4rem)] p-4">
+    <aside className="hidden md:block w-64 shrink-0 border-r border-slate-200 bg-slate-900 text-white min-h-[calc(100vh-4rem)] p-4">
       <div className="mb-6 px-3 py-3 rounded-xl bg-slate-800/80 border border-slate-700">
         <div className="flex items-center gap-2">
           <ShieldCheck className="h-4 w-4 text-amber-500" />

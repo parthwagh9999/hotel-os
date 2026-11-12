@@ -1,6 +1,5 @@
 import { PartialType } from '@nestjs/swagger';
-import { IsArray, IsEnum, IsOptional, IsString, ValidateNested } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsArray, IsEnum, IsOptional, IsString } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CreateRoomDto } from './create-room.dto';
 

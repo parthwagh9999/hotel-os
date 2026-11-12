@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { Building2, ShieldCheck, Heart } from 'lucide-react';
+import { Building2, ShieldCheck } from 'lucide-react';
 
 export function Footer() {
   return (
@@ -39,6 +39,11 @@ export function Footer() {
               <li>
                 <Link href="/hotels?city=Mumbai" className="hover:text-amber-600">
                   Mumbai Luxury Stays
+                </Link>
+              </li>
+              <li>
+                <Link href="/reservations" className="hover:text-amber-600">
+                  Manage Reservations
                 </Link>
               </li>
               <li>

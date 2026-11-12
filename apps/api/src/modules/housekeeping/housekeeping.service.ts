@@ -56,19 +56,26 @@ export class HousekeepingService {
     });
   }
 
-  async updateTaskStatus(
-    taskId: string,
-    status: string,
-    inspectedBy?: string
-  ) {
-    const task = await this.prisma.housekeepingTask.findUnique({
-      where: { id: taskId },
+  private async findTaskOrFail(hotelId: string, taskId: string) {
+    const task = await this.prisma.housekeepingTask.findFirst({
+      where: { id: taskId, hotelId },
       include: { room: true },
     });
 
     if (!task) {
-      throw new NotFoundException('Housekeeping task not found');
+      throw new NotFoundException('Housekeeping task not found in this hotel');
     }
+
+    return task;
+  }
+
+  async updateTaskStatus(
+    hotelId: string,
+    taskId: string,
+    status: string,
+    inspectedBy?: string
+  ) {
+    const task = await this.findTaskOrFail(hotelId, taskId);
 
     const updateData: any = { status };
 
@@ -104,7 +111,12 @@ export class HousekeepingService {
     });
   }
 
-  async updateChecklist(taskId: string, checklist: Array<{ item: string; completed: boolean }>) {
+  async updateChecklist(
+    hotelId: string,
+    taskId: string,
+    checklist: Array<{ item: string; completed: boolean }>
+  ) {
+    await this.findTaskOrFail(hotelId, taskId);
     return this.prisma.housekeepingTask.update({
       where: { id: taskId },
       data: { checklist },

@@ -10,6 +10,7 @@ import { HousekeepingModule } from './modules/housekeeping/housekeeping.module';
 import { FinanceModule } from './modules/finance/finance.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { AiModule } from './modules/ai/ai.module';
+import { HealthController } from './health.controller';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
@@ -29,6 +30,7 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
     AdminModule,
     AiModule,
   ],
+  controllers: [HealthController],
   providers: [
     {
       provide: APP_FILTER,

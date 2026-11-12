@@ -2,25 +2,22 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import {
-  Sparkles,
-  Award,
   Crown,
-  Gift,
-  CheckCircle2,
-  TrendingUp,
   Clock,
-  ArrowRight,
-  ShieldCheck,
   Zap,
   BedDouble,
-  Utensils,
   Coffee,
 } from 'lucide-react';
+import { useAuthStore } from '../../src/lib/auth-store';
 
 export default function LoyaltyRewardsPage() {
+  const { user } = useAuthStore();
+  const memberDisplayName = user ? `${user.firstName} ${user.lastName}` : 'Anita Roy';
+
   const [points, setPoints] = useState(14850);
-  const [redeemedVouchers, setRedeemedVouchers] = useState<string[]>([]);
+  const [redeemedVouchers, setRedeemedVouchers] = useState<Array<{ id: string; code: string; title: string }>>([]);
 
   const perks = [
     { title: '15% Reward Points Multiplier', desc: 'Earn 15 points per ₹100 spent on all direct website bookings', icon: Zap },
@@ -36,22 +33,32 @@ export default function LoyaltyRewardsPage() {
     { id: 'r4', title: 'Complimentary Airport Luxury Sedan Transfer', cost: 2000, type: 'TRAVEL', desc: 'Chauffeured pickup or drop to international airport' },
   ];
 
-  const history = [
+  const [history, setHistory] = useState([
     { desc: 'Stay at The Grand Palace Hotel (3 Nights)', date: '11 May 2025', points: '+5,625 pts', type: 'EARNED' },
     { desc: 'Direct Website Booking Bonus (15%)', date: '11 May 2025', points: '+845 pts', type: 'EARNED' },
     { desc: 'Redeemed: ₹2,000 Stay Discount Voucher', date: '02 Apr 2025', points: '-2,000 pts', type: 'REDEEMED' },
     { desc: 'Stay at Budget Inn Executive (2 Nights)', date: '15 Mar 2025', points: '+960 pts', type: 'EARNED' },
-  ];
+  ]);
 
   const handleRedeem = (item: typeof rewardCatalog[0]) => {
     if (points < item.cost) {
-      alert('Insufficient points for this reward!');
+      toast.error('Insufficient points for this reward!');
       return;
     }
 
+    const code = `HOS-REWARD-${Math.floor(1000 + Math.random() * 9000)}`;
     setPoints(points - item.cost);
-    setRedeemedVouchers([...redeemedVouchers, item.id]);
-    alert(`Reward redeemed: "${item.title}"! Voucher code HOS-REWARD-${Math.floor(1000 + Math.random() * 9000)} issued.`);
+    setRedeemedVouchers([...redeemedVouchers, { id: item.id, code, title: item.title }]);
+    setHistory([
+      {
+        desc: `Redeemed: ${item.title} (${code})`,
+        date: 'Today',
+        points: `-${item.cost.toLocaleString('en-IN')} pts`,
+        type: 'REDEEMED',
+      },
+      ...history,
+    ]);
+    toast.success(`Voucher "${item.title}" redeemed! Code: ${code}`);
   };
 
   return (
@@ -67,14 +74,13 @@ export default function LoyaltyRewardsPage() {
               <span>PLATINUM VOYAGER ELITE TIER</span>
             </div>
             <h1 className="text-3xl font-black sm:text-4xl text-white">
-              Anita Roy's Hospitality Rewards
+              {memberDisplayName}'s Hospitality Rewards
             </h1>
             <p className="text-xs text-slate-300 max-w-xl">
-              Member since 2023 • Tier status valid through Dec 2026. Enjoy elite tier privileges across 25+ partner properties worldwide.
+              Member since 2023 • Tier status valid through Dec 2026. Enjoy elite tier privileges across partner properties worldwide.
             </p>
           </div>
 
-          {/* Points Counter Box */}
           <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 p-6 text-center shrink-0">
             <span className="text-[11px] font-bold uppercase tracking-wider text-amber-300 block">
               Available Reward Points
@@ -88,20 +94,19 @@ export default function LoyaltyRewardsPage() {
           </div>
         </div>
 
-        {/* Tier Progress Bar */}
         <div className="mt-8 pt-6 border-t border-white/10 space-y-2">
           <div className="flex justify-between text-xs font-bold text-slate-300">
-            <span>Platinum Elite (14,850 pts)</span>
+            <span>Platinum Elite ({points.toLocaleString('en-IN')} pts)</span>
             <span className="text-amber-400">Next Tier: Diamond Crown (20,000 pts)</span>
           </div>
           <div className="h-2.5 w-full rounded-full bg-white/10 overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-amber-500 to-amber-300 transition-all duration-500"
-              style={{ width: `${(points / 20000) * 100}%` }}
+              style={{ width: `${Math.min(100, (points / 20000) * 100)}%` }}
             />
           </div>
           <span className="text-[11px] text-slate-400">
-            5,150 more points needed to unlock complimentary Presidential Suite upgrades and dedicated butler service.
+            {Math.max(0, 20000 - points).toLocaleString('en-IN')} more points needed to unlock complimentary Presidential Suite upgrades.
           </span>
         </div>
       </div>
@@ -139,7 +144,7 @@ export default function LoyaltyRewardsPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {rewardCatalog.map((item) => {
-            const isRedeemed = redeemedVouchers.includes(item.id);
+            const voucher = redeemedVouchers.find((v) => v.id === item.id);
             return (
               <div key={item.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col justify-between space-y-4">
                 <div>
@@ -153,20 +158,26 @@ export default function LoyaltyRewardsPage() {
                   </div>
                   <h4 className="text-sm font-bold text-slate-900">{item.title}</h4>
                   <p className="text-xs text-slate-500 mt-1">{item.desc}</p>
+                  {voucher && (
+                    <div className="mt-2 font-mono text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2 py-1 rounded">
+                      Code: {voucher.code}
+                    </div>
+                  )}
                 </div>
 
                 <button
+                  type="button"
                   onClick={() => handleRedeem(item)}
-                  disabled={isRedeemed || points < item.cost}
+                  disabled={Boolean(voucher) || points < item.cost}
                   className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all ${
-                    isRedeemed
+                    voucher
                       ? 'bg-emerald-100 text-emerald-800'
                       : points < item.cost
                       ? 'bg-slate-100 text-slate-400'
                       : 'bg-amber-600 text-white hover:bg-amber-700 shadow-sm'
                   }`}
                 >
-                  {isRedeemed ? '✓ Voucher Issued' : points < item.cost ? 'Need More Points' : 'Redeem Now'}
+                  {voucher ? '✓ Voucher Issued' : points < item.cost ? 'Need More Points' : 'Redeem Now'}
                 </button>
               </div>
             );

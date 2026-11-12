@@ -4,15 +4,11 @@ import {
   IsEmail,
   IsNumber,
   IsArray,
-  IsEnum,
   IsUrl,
   Min,
   Max,
   MinLength,
   MaxLength,
-  IsPhoneNumber,
-  IsLatitude,
-  IsLongitude,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';

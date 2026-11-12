@@ -1,4 +1,4 @@
-import { IsEnum, IsOptional, IsString, IsDateString, MaxLength } from 'class-validator';
+import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateBookingStatusDto {

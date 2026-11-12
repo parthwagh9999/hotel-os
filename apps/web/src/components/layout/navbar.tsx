@@ -3,25 +3,27 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useAuthStore } from '../../lib/auth-store';
+import { useUiStore } from '../../lib/ui-store';
 import {
   Building2,
-  User,
   LogOut,
-  Calendar,
-  Sparkles,
   ShieldCheck,
   Compass,
   Globe,
   KeyRound,
   Gift,
   ChevronDown,
+  CalendarCheck,
+  Menu,
+  X,
 } from 'lucide-react';
 import { translations, SupportedLanguage } from '@hotel-os/shared';
 
 export function Navbar() {
   const { user, isAuthenticated, logout } = useAuthStore();
-  const [lang, setLang] = useState<SupportedLanguage>('en');
+  const { lang, setLang } = useUiStore();
   const [langOpen, setLangOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const t = translations[lang] || translations.en;
 
@@ -49,14 +51,22 @@ export function Navbar() {
           </div>
         </Link>
 
-        {/* Navigation Links */}
-        <nav className="hidden lg:flex items-center gap-6 text-xs font-semibold text-slate-600 dark:text-slate-300">
+        {/* Desktop Navigation Links */}
+        <nav aria-label="Main navigation" className="hidden lg:flex items-center gap-5 text-xs font-semibold text-slate-600 dark:text-slate-300">
           <Link
             href="/hotels"
             className="flex items-center gap-1.5 transition-colors hover:text-amber-600"
           >
             <Compass className="h-3.5 w-3.5" />
             <span>{t.discoverHotels}</span>
+          </Link>
+
+          <Link
+            href="/reservations"
+            className="flex items-center gap-1.5 transition-colors hover:text-amber-600"
+          >
+            <CalendarCheck className="h-3.5 w-3.5 text-emerald-600" />
+            <span>My Stays</span>
           </Link>
 
           <Link
@@ -85,7 +95,7 @@ export function Navbar() {
 
           <Link
             href="/admin"
-            className="flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
+            className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
           >
             <ShieldCheck className="h-3 w-3 text-amber-600" />
             <span>{t.superAdmin}</span>
@@ -97,9 +107,12 @@ export function Navbar() {
           {/* Regional Language Switcher */}
           <div className="relative">
             <button
+              type="button"
               onClick={() => setLangOpen(!langOpen)}
               className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200"
               title="Change Language"
+              aria-label="Change Language"
+              aria-expanded={langOpen}
             >
               <Globe className="h-3.5 w-3.5 text-amber-600" />
               <span className="uppercase">{lang}</span>
@@ -111,6 +124,7 @@ export function Navbar() {
                 {languages.map((l) => (
                   <button
                     key={l.code}
+                    type="button"
                     onClick={() => {
                       setLang(l.code);
                       setLangOpen(false);
@@ -133,25 +147,33 @@ export function Navbar() {
           {isAuthenticated && user ? (
             <div className="flex items-center gap-2">
               <Link
-                href="/hotel/dashboard"
+                href={
+                  user.role === 'SUPER_ADMIN' || user.role === 'PLATFORM_ADMIN'
+                    ? '/admin'
+                    : user.role === 'CUSTOMER'
+                    ? '/reservations'
+                    : '/hotel/dashboard'
+                }
                 className="flex items-center gap-2 text-xs font-medium text-slate-700 hover:text-slate-900 dark:text-slate-200"
               >
                 <div className="h-8 w-8 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-xs">
-                  {user.firstName[0]}
-                  {user.lastName[0]}
+                  {user.firstName?.[0] || 'U'}
+                  {user.lastName?.[0] || ''}
                 </div>
                 <span className="hidden sm:inline font-bold">{user.firstName}</span>
               </Link>
               <button
+                type="button"
                 onClick={logout}
                 className="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                 title="Sign out"
+                aria-label="Sign out"
               >
                 <LogOut className="h-4 w-4" />
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-2">
               <Link
                 href="/login"
                 className="rounded-lg px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
@@ -166,8 +188,53 @@ export function Navbar() {
               </Link>
             </div>
           )}
+
+          {/* Mobile Hamburger Menu Button */}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="lg:hidden p-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100"
+            aria-label="Toggle navigation menu"
+            aria-expanded={mobileMenuOpen}
+          >
+            {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+          </button>
         </div>
       </div>
+
+      {/* Responsive Mobile Navigation Drawer */}
+      {mobileMenuOpen && (
+        <div className="lg:hidden border-t border-slate-200 bg-white px-4 py-4 space-y-2 text-xs font-semibold shadow-lg">
+          <Link href="/hotels" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 py-2 px-3 rounded-lg hover:bg-slate-100 text-slate-700">
+            <Compass className="h-4 w-4 text-amber-600" /> {t.discoverHotels}
+          </Link>
+          <Link href="/reservations" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 py-2 px-3 rounded-lg hover:bg-slate-100 text-slate-700">
+            <CalendarCheck className="h-4 w-4 text-emerald-600" /> My Reservations
+          </Link>
+          <Link href="/check-in" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 py-2 px-3 rounded-lg hover:bg-slate-100 text-slate-700">
+            <KeyRound className="h-4 w-4 text-amber-600" /> {t.contactlessCheckIn}
+          </Link>
+          <Link href="/loyalty" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 py-2 px-3 rounded-lg hover:bg-slate-100 text-slate-700">
+            <Gift className="h-4 w-4 text-purple-600" /> Loyalty Rewards
+          </Link>
+          <Link href="/hotel/dashboard" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 py-2 px-3 rounded-lg hover:bg-slate-100 text-slate-700">
+            <Building2 className="h-4 w-4 text-amber-600" /> {t.hotelManagement}
+          </Link>
+          <Link href="/admin" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 py-2 px-3 rounded-lg hover:bg-slate-100 text-slate-700">
+            <ShieldCheck className="h-4 w-4 text-amber-600" /> {t.superAdmin}
+          </Link>
+          {!isAuthenticated && (
+            <div className="pt-2 border-t border-slate-100 flex gap-2">
+              <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="flex-1 text-center py-2 rounded-lg border border-slate-200 text-slate-700">
+                {t.signIn}
+              </Link>
+              <Link href="/hotel/onboarding" onClick={() => setMobileMenuOpen(false)} className="flex-1 text-center py-2 rounded-lg bg-amber-600 text-white">
+                {t.listYourHotel}
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
     </header>
   );
 }

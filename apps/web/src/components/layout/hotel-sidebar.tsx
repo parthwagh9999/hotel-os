@@ -6,12 +6,10 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   BedDouble,
-  CalendarDays,
   UserCheck,
   Sparkles,
   Receipt,
   BrainCircuit,
-  Settings,
   Building,
   UtensilsCrossed,
   MessageSquare,
@@ -37,7 +35,7 @@ export function HotelSidebar() {
   ];
 
   return (
-    <aside className="w-64 shrink-0 border-r border-slate-200 bg-white min-h-[calc(100vh-4rem)] p-4 dark:border-slate-800 dark:bg-slate-900">
+    <aside className="hidden md:block w-64 shrink-0 border-r border-slate-200 bg-white min-h-[calc(100vh-4rem)] p-4 dark:border-slate-800 dark:bg-slate-900">
       <div className="mb-6 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200/60 dark:bg-amber-950/30 dark:border-amber-900/40">
         <div className="flex items-center gap-2">
           <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />

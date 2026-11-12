@@ -10,7 +10,7 @@
   "scripts": {
     "generate": "prisma generate",
     "push": "prisma db push",
-    "seed": "ts-node prisma/seed.ts",
+    "seed": "tsx prisma/seed.ts",
     "studio": "prisma studio",
     "build": "tsc",
     "clean": "rm -rf dist .turbo node_modules"

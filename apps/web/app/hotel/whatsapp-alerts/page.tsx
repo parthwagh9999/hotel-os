@@ -1,18 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
+import { toast } from 'sonner';
 import {
-  MessageSquare,
   Send,
   CheckCheck,
   ShieldCheck,
-  Sparkles,
-  Smartphone,
   Phone,
-  FileText,
-  User,
-  Clock,
-  ArrowRight,
   ExternalLink,
 } from 'lucide-react';
 
@@ -26,6 +21,14 @@ interface WhatsAppTemplate {
   link?: string;
 }
 
+interface DispatchLogItem {
+  id: string;
+  template: string;
+  recipient: string;
+  timestamp: string;
+  status: 'DELIVERED';
+}
+
 export default function WhatsAppAlertsPage() {
   const templates: WhatsAppTemplate[] = [
     {
@@ -34,7 +37,7 @@ export default function WhatsAppAlertsPage() {
       category: 'GUEST_COMMUNICATION',
       trigger: 'Triggered instantly upon online booking confirmation or front-desk reservation',
       previewMessage:
-        'Namaste Dr. Anita Roy! 🏨 Your reservation at *The Grand Palace Hotel & Spa* is confirmed.\n\n📅 *Dates:* 15 Jun – 18 Jun 2025 (3 Nights)\n🛏️ *Room:* Deluxe Heritage (#204)\n🔖 *Ref:* HOS-7K2X9P\n💰 *Total:* ₹37,500 (Paid in Full)\n\nWe look forward to welcoming you to Mumbai!',
+        'Namaste Dr. Anita Roy! 🏨 Your reservation at *The Grand Palace Hotel & Spa* is confirmed.\n\n📅 *Dates:* 15 Jun – 18 Jun 2025 (3 Nights)\n🛏️ *Room:* Deluxe Heritage (#204)\n🔖 *Ref:* HOS-7K2X9P\n💰 *Total:* ₹44,250 (Paid in Full)\n\nWe look forward to welcoming you to Mumbai!',
       actionButton: 'View Digital Stay Voucher',
       link: '/booking/confirmation/HOS-7K2X9P',
     },
@@ -64,20 +67,36 @@ export default function WhatsAppAlertsPage() {
       category: 'GUEST_COMMUNICATION',
       trigger: 'Dispatched immediately when guest departs front desk with settled billing',
       previewMessage:
-        'Thank you for staying at *The Grand Palace Hotel*! ✨\n\nYour checkout invoice *#INV-2025-001* has been settled.\n📄 *Gross Amount:* ₹42,000\n🧾 *GST Tax Included:* ₹4,500 (12% Slab)\n\nWe hope to host you again soon.',
-      actionButton: 'Download GST Invoice PDF',
+        'Thank you for staying at *The Grand Palace Hotel*! ✨\n\nYour checkout invoice *#INV-2025-001* has been settled.\n📄 *Gross Amount:* ₹44,250\n🧾 *GST Tax Included:* ₹6,750 (18% Slab)\n\nWe hope to host you again soon.',
+      actionButton: 'Download GST Invoice',
       link: '/hotel/finance',
     },
   ];
 
   const [activeTemplate, setActiveTemplate] = useState<WhatsAppTemplate>(templates[0]);
   const [recipientPhone, setRecipientPhone] = useState('+91 98201 12345');
-  const [sentSuccess, setSentSuccess] = useState(false);
+  const [dispatchLog, setDispatchLog] = useState<DispatchLogItem[]>([
+    {
+      id: 'log-1',
+      template: 'Booking Confirmation & Voucher',
+      recipient: '+91 98201 12345',
+      timestamp: '10:32 AM',
+      status: 'DELIVERED',
+    },
+  ]);
 
   const handleSendTest = (e: React.FormEvent) => {
     e.preventDefault();
-    setSentSuccess(true);
-    setTimeout(() => setSentSuccess(false), 4000);
+    if (!recipientPhone.trim()) return;
+    const newEntry: DispatchLogItem = {
+      id: `log-${Date.now()}`,
+      template: activeTemplate.name,
+      recipient: recipientPhone.trim(),
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      status: 'DELIVERED',
+    };
+    setDispatchLog([newEntry, ...dispatchLog.slice(0, 4)]);
+    toast.success(`Simulated WhatsApp "${activeTemplate.name}" delivered to ${recipientPhone}!`);
   };
 
   return (
@@ -87,7 +106,7 @@ export default function WhatsAppAlertsPage() {
         <div>
           <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            Meta WhatsApp Business API • Production Gateway
+            Meta WhatsApp Business API • Sandbox Gateway
           </span>
           <h1 className="text-2xl font-extrabold text-slate-900 sm:text-3xl mt-0.5">
             Automated WhatsApp Operations Dispatcher
@@ -105,7 +124,6 @@ export default function WhatsAppAlertsPage() {
 
       {/* ─── Two-Column Layout: Templates List + Live Phone Simulator ──────── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: Template Cards */}
         <div className="lg:col-span-7 space-y-4">
           <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
             Operational Notification Triggers
@@ -156,6 +174,7 @@ export default function WhatsAppAlertsPage() {
                   onChange={(e) => setRecipientPhone(e.target.value)}
                   className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-900 focus:border-emerald-600 focus:outline-none"
                   placeholder="+91 XXXXX XXXXX"
+                  required
                 />
               </div>
 
@@ -166,25 +185,35 @@ export default function WhatsAppAlertsPage() {
                 <Send className="h-3.5 w-3.5" />
                 <span>Simulate WhatsApp Webhook Delivery</span>
               </button>
-
-              {sentSuccess && (
-                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold text-center">
-                  ✓ Message payload dispatched to {recipientPhone} via WhatsApp Business API!
-                </div>
-              )}
             </form>
+
+            {/* Recent Dispatch Log */}
+            <div className="pt-3 border-t border-slate-100 space-y-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Recent Dispatch Webhook Log
+              </span>
+              {dispatchLog.map((item) => (
+                <div key={item.id} className="flex items-center justify-between text-xs bg-slate-50 rounded-xl px-3 py-2">
+                  <div>
+                    <span className="font-bold text-slate-800">{item.template}</span>
+                    <span className="text-slate-400 ml-2">to {item.recipient}</span>
+                  </div>
+                  <span className="text-[10px] font-bold text-emerald-700">
+                    ✓ {item.status} ({item.timestamp})
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Right Column: Mobile WhatsApp Screen Preview */}
         <div className="lg:col-span-5 flex justify-center">
           <div className="w-[340px] rounded-[40px] border-8 border-slate-900 bg-slate-100 shadow-2xl overflow-hidden">
-            {/* Top Speaker Notch */}
             <div className="bg-slate-900 h-6 flex items-center justify-center">
               <div className="h-1.5 w-16 bg-slate-700 rounded-full" />
             </div>
 
-            {/* WhatsApp App Header */}
             <div className="bg-[#075e54] p-3 text-white flex items-center gap-3">
               <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
                 HO
@@ -199,39 +228,35 @@ export default function WhatsAppAlertsPage() {
               <Phone className="h-4 w-4 text-emerald-200" />
             </div>
 
-            {/* Chat Body */}
             <div className="p-3 space-y-3 bg-[#efeae2] min-h-[440px] flex flex-col justify-end">
               <div className="mx-auto rounded-lg bg-amber-100/80 px-2 py-1 text-[9px] text-amber-900 text-center font-semibold">
                 🔒 End-to-end encrypted with Hotel OS Verified Gateway
               </div>
 
-              {/* Chat Bubble */}
               <div className="bg-white rounded-2xl rounded-tl-none p-3.5 shadow-sm text-xs text-slate-800 space-y-2 relative border border-black/5">
                 <div className="whitespace-pre-line text-[11px] leading-relaxed">
                   {activeTemplate.previewMessage}
                 </div>
 
                 <div className="flex items-center justify-end gap-1 text-[9px] text-slate-400 pt-1">
-                  <span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  <span>12:45 PM</span>
                   <CheckCheck className="h-3 w-3 text-blue-500" />
                 </div>
 
-                {/* WhatsApp Interactive Quick Reply Button */}
                 {activeTemplate.actionButton && (
                   <div className="pt-2 border-t border-slate-100">
-                    <a
-                      href={activeTemplate.link || '#'}
+                    <Link
+                      href={activeTemplate.link || '/'}
                       className="w-full flex items-center justify-center gap-1.5 py-1.5 text-center text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors"
                     >
                       <ExternalLink className="h-3 w-3" />
                       <span>{activeTemplate.actionButton}</span>
-                    </a>
+                    </Link>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Bottom Bar Simulator */}
             <div className="bg-white p-2 border-t border-slate-200 text-center text-[10px] text-slate-400">
               Hotel OS Live WhatsApp Gateway
             </div>

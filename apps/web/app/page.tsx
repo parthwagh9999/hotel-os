@@ -12,12 +12,7 @@ import {
   ShieldCheck,
   Zap,
   Sparkles,
-  Building,
-  CheckCircle,
   ArrowRight,
-  Wifi,
-  Coffee,
-  Waves,
 } from 'lucide-react';
 
 export default function HomePage() {

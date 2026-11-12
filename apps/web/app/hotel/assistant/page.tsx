@@ -3,17 +3,10 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import {
-  BrainCircuit,
   Send,
   Sparkles,
   Bot,
   User,
-  BedDouble,
-  IndianRupee,
-  Calendar,
-  CheckCircle2,
-  Clock,
-  ArrowRight,
 } from 'lucide-react';
 
 interface ChatMessage {

@@ -105,6 +105,15 @@ export class AdminService {
       data: {
         status,
         isVerified: status === 'APPROVED',
+        ...(notes
+          ? {
+              metadata: {
+                ...((hotel.metadata as Record<string, any>) || {}),
+                reviewNotes: notes,
+                reviewedAt: new Date().toISOString(),
+              },
+            }
+          : {}),
       },
     });
   }

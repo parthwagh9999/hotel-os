@@ -1,26 +1,19 @@
 'use client';
 
-import React, { useState, use } from 'react';
+import React, { useState, use, useEffect } from 'react';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import {
   KeyRound,
   CheckCircle2,
-  ShieldCheck,
-  Building2,
-  Calendar,
-  CreditCard,
-  User,
   Clock,
   Sparkles,
   QrCode,
   ArrowRight,
-  ArrowLeft,
   UploadCloud,
-  FileCheck,
   Wifi,
-  PhoneCall,
-  MapPin,
 } from 'lucide-react';
+import { StoredBooking, getBookingByRef } from '../../../src/lib/demo-data';
 
 interface PageProps {
   params: Promise<{ bookingRef: string }>;
@@ -30,39 +23,50 @@ export default function ContactlessCheckInFlow({ params }: PageProps) {
   const resolvedParams = use(params);
   const bookingRef = (resolvedParams.bookingRef || 'HOS-7K2X9P').toUpperCase();
 
+  const [storedBooking, setStoredBooking] = useState<StoredBooking | null>(null);
   const [step, setStep] = useState(1);
   const [docType, setDocType] = useState('AADHAAR');
   const [docNumber, setDocNumber] = useState('XXXX-XXXX-4589');
   const [etaTime, setEtaTime] = useState('14:30');
-  const [specialRequests, setSpecialRequests] = useState('High floor room, extra hypoallergenic pillows');
   const [signatureName, setSignatureName] = useState('Dr. Anita Roy');
   const [agreedTerms, setAgreedTerms] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
 
-  // Reservation details
+  useEffect(() => {
+    const found = getBookingByRef(bookingRef);
+    if (found) {
+      setStoredBooking(found);
+      setSignatureName(found.guestName);
+    }
+  }, [bookingRef]);
+
   const reservation = {
     ref: bookingRef,
-    hotelName: 'The Grand Palace Hotel & Spa',
-    city: 'Mumbai',
-    roomCategory: 'Deluxe Heritage Room',
+    hotelName: storedBooking?.hotelName || 'The Grand Palace Hotel & Spa',
+    city: storedBooking?.city || 'Mumbai',
+    roomCategory: storedBooking?.categoryName || 'Deluxe Heritage Room',
     roomNumber: '204',
-    checkIn: 'Today, 14:00 hrs',
-    checkOut: '18 Jun 2025, 11:00 hrs',
-    guestName: 'Dr. Anita Roy',
-    phone: '+91 98201 12345',
-    totalAmount: 37500,
-    paidAmount: 37500,
+    checkIn: storedBooking?.checkIn || 'Today, 14:00 hrs',
+    checkOut: storedBooking?.checkOut || '18 Jun 2025',
+    nights: storedBooking?.nights || 3,
+    guestName: storedBooking?.guestName || 'Dr. Anita Roy',
+    totalAmount: storedBooking?.totalAmount || 44250,
     wifiPass: 'GrandPalaceGuest@2025',
     accessPin: '8204',
   };
 
   const handleFinishCheckIn = () => {
+    if (!docNumber.trim() || !signatureName.trim()) {
+      toast.error('Please complete your ID number and digital signature');
+      return;
+    }
     setIsSubmitting(true);
     setTimeout(() => {
       setIsSubmitting(false);
       setIsCompleted(true);
-    }, 1000);
+      toast.success(`Express Check-In complete! Digital Key issued for Room #${reservation.roomNumber}`);
+    }, 600);
   };
 
   return (
@@ -171,7 +175,7 @@ export default function ContactlessCheckInFlow({ params }: PageProps) {
               <span className={step >= 1 ? 'text-amber-600' : ''}>1. Reservation</span>
               <span className={step >= 2 ? 'text-amber-600' : ''}>2. ID Upload</span>
               <span className={step >= 3 ? 'text-amber-600' : ''}>3. Signature</span>
-              <span className={step >= 4 ? 'text-amber-600' : ''}>4. Key Issue</span>
+              <span className={isCompleted ? 'text-amber-600' : ''}>4. Key Issue</span>
             </div>
 
             {/* Step 1: Confirm Reservation */}
@@ -193,7 +197,9 @@ export default function ContactlessCheckInFlow({ params }: PageProps) {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-500">Stay Duration:</span>
-                    <span className="font-bold text-slate-900">3 Nights (15 Jun – 18 Jun)</span>
+                    <span className="font-bold text-slate-900">
+                      {reservation.nights} Nights ({reservation.checkIn} – {reservation.checkOut})
+                    </span>
                   </div>
                   <div className="flex justify-between border-t border-amber-200/40 pt-2">
                     <span className="text-slate-500">Payment Status:</span>
@@ -262,14 +268,13 @@ export default function ContactlessCheckInFlow({ params }: PageProps) {
                   />
                 </div>
 
-                {/* Simulated Document Upload Box */}
                 <div className="border-2 border-dashed border-amber-300 rounded-2xl p-6 text-center bg-amber-50/30">
                   <UploadCloud className="mx-auto h-8 w-8 text-amber-600 mb-2" />
                   <span className="text-xs font-bold text-slate-800 block">
                     Identity Document Captured
                   </span>
                   <span className="text-[11px] text-slate-500">
-                    aadhaar_front_verified.jpg (248 KB) • Securely encrypted
+                    {docType.toLowerCase()}_verified.jpg (248 KB) • DPDP 2025 encrypted
                   </span>
                 </div>
 
@@ -301,7 +306,6 @@ export default function ContactlessCheckInFlow({ params }: PageProps) {
                   Sign below to authorize hotel registration and acknowledge property check-in regulations.
                 </p>
 
-                {/* Signature Pad Simulation */}
                 <div className="rounded-2xl border border-slate-300 bg-slate-50 p-4 relative">
                   <div className="text-[10px] uppercase font-bold text-slate-400 mb-2">Digital Signature Area</div>
                   <div className="h-24 flex items-center justify-center border-b border-dashed border-slate-300">
@@ -310,7 +314,7 @@ export default function ContactlessCheckInFlow({ params }: PageProps) {
                     </span>
                   </div>
                   <div className="flex justify-between items-center text-[10px] text-slate-400 mt-2">
-                    <span>IP Timestamp Verified • {new Date().toLocaleDateString()}</span>
+                    <span>Timestamp Verified • {new Date().toLocaleDateString()}</span>
                     <span className="text-emerald-600 font-bold">256-Bit Cryptographic Hash</span>
                   </div>
                 </div>

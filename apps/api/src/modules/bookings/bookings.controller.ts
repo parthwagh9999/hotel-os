@@ -74,37 +74,38 @@ export class BookingsController {
     return this.bookingsService.getFrontDeskArrivalsAndDepartures(hotelId);
   }
 
-  @UseGuards(JwtAuthGuard, TenantGuard)
+  @UseGuards(JwtAuthGuard)
   @Post('bookings/:id/check-in')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'PMS Front-desk Check-in guest and occupy room' })
   checkIn(
     @Param('id') id: string,
-    @CurrentUser('firstName') staffName: string
+    @CurrentUser() user: { id: string; role: string; firstName?: string }
   ) {
-    return this.bookingsService.checkIn(id, staffName || 'Receptionist');
+    return this.bookingsService.checkIn(id, user);
   }
 
-  @UseGuards(JwtAuthGuard, TenantGuard)
+  @UseGuards(JwtAuthGuard)
   @Post('bookings/:id/check-out')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'PMS Front-desk Check-out guest, trigger invoice & cleaning' })
   checkOut(
     @Param('id') id: string,
-    @CurrentUser('firstName') staffName: string
+    @CurrentUser() user: { id: string; role: string; firstName?: string }
   ) {
-    return this.bookingsService.checkOut(id, staffName || 'Receptionist');
+    return this.bookingsService.checkOut(id, user);
   }
 
-  @Public()
+  @UseGuards(JwtAuthGuard)
   @Post('bookings/:id/cancel')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Cancel reservation and restore room availability' })
   cancel(
     @Param('id') id: string,
+    @CurrentUser() user: { id: string; role: string },
     @Body('reason') reason?: string
   ) {
-    return this.bookingsService.cancel(id, reason);
+    return this.bookingsService.cancel(id, user, reason);
   }
 }
 
